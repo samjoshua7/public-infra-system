@@ -9,14 +9,14 @@ import {
   Link,
   CircularProgress,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { signIn } from './api';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { signIn, getUserProfile } from './api';
+import { useAuth } from '../../hooks/useAuth';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/feed';
+  const { refreshProfile } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,8 +29,26 @@ export const LoginPage = () => {
     setSubmitting(true);
 
     try {
-      await signIn({ email, password });
-      navigate(from, { replace: true });
+      const authData = await signIn({ email, password });
+      await refreshProfile();
+
+      if (authData?.user?.id) {
+        const profile = await getUserProfile(authData.user.id);
+        const role = profile?.role || 'CITIZEN';
+        const approval = profile?.approval_status || (role === 'CITIZEN' ? 'pending' : 'approved');
+
+        if (role === 'ADMIN') {
+          navigate('/admin', { replace: true });
+        } else if (role === 'GOVERNMENT_OFFICIAL') {
+          navigate('/dashboard', { replace: true });
+        } else if (approval === 'approved') {
+          navigate('/feed', { replace: true });
+        } else {
+          navigate('/waiting-approval', { replace: true });
+        }
+      } else {
+        navigate('/feed', { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {
@@ -53,7 +71,7 @@ export const LoginPage = () => {
             Welcome Back
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Sign in to track infrastructure reports and contribute to your community.
+            Sign in to CivicSpeak to track infrastructure reports and contribute to your community.
           </Typography>
 
           <ErrorAlert message={error} />

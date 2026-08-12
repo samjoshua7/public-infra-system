@@ -1,11 +1,21 @@
 import { supabase } from '../../lib/supabaseClient';
 
 /**
- * List all reports for government officials / admins, including hidden reports.
+ * List all reports for government officials / admins, including hidden reports, with sorting and pagination.
  */
-export const listReportsForOfficial = async ({ status = 'all', page = 1, pageSize = 12 }) => {
+export const listReportsForOfficial = async ({
+  status = 'all',
+  page = 1,
+  pageSize = 10,
+  sortBy = 'created_at',
+  sortOrder = 'desc',
+}) => {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
+
+  const validSortColumns = ['title', 'category', 'created_at', 'like_count', 'status'];
+  const sortCol = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+  const ascending = sortOrder === 'asc';
 
   let query = supabase
     .from('issue_reports')
@@ -28,7 +38,7 @@ export const listReportsForOfficial = async ({ status = 'all', page = 1, pageSiz
     `,
       { count: 'exact' }
     )
-    .order('created_at', { ascending: false })
+    .order(sortCol, { ascending })
     .range(from, to);
 
   if (status && status !== 'all') {

@@ -11,10 +11,12 @@ import {
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { signUp } from './api';
+import { useAuth } from '../../hooks/useAuth';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,7 +41,16 @@ export const SignupPage = () => {
 
     try {
       await signUp({ email, password, name });
-      navigate('/feed');
+      await refreshProfile();
+
+      const lowerEmail = email.trim().toLowerCase();
+      if (lowerEmail === 'samjoshua.paldwin@gmail.com') {
+        navigate('/admin', { replace: true });
+      } else if (lowerEmail === 'samc.ug.24.cs@francisxavier.ac.in') {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/waiting-approval', { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
@@ -62,7 +73,7 @@ export const SignupPage = () => {
             Create an Account
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Join your community in identifying and resolving public infrastructure issues.
+            Join CivicSpeak in identifying and resolving public infrastructure issues across your community.
           </Typography>
 
           <ErrorAlert message={error} />
@@ -113,7 +124,7 @@ export const SignupPage = () => {
               disabled={submitting}
               sx={{ mt: 3, mb: 2 }}
             >
-              {submitting ? <CircularProgress size={24} color="inherit" /> : 'Create Citizen Account'}
+              {submitting ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">

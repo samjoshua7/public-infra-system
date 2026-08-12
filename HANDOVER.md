@@ -1,62 +1,85 @@
-# HANDOVER.md — EXECUTION_PLAN_03.md: Rebrand, OpenRouter AI, Opt-In Checkbox
+# HANDOVER.md — EXECUTION_PLAN_04.md: Access Control, Tables, Official Dashboard & Mobile UI
 
 ## Objective
-Rebrand application from **CivicPulse** to **CivicSpeak**, replace Gemini with **OpenRouter** (`google/gemma-4-26b-a4b-it:free`) as the AI photo analysis provider, and make AI photo analysis **opt-in** via a checkbox (unchecked by default).
+Implement Phase 4 features defined in `EXECUTION_PLAN_04.md`: user approval access guard (`pending`/`approved`/`rejected`), waiting for approval page with WhatsApp request button, Super Admin user approval controls and system settings (WhatsApp number & geofencing), table pagination and column sorting across all management tables, server-side geofence validation, official report importance signals (likes), and mobile-first citizen UI responsiveness.
 
 ---
 
-## Decisions Made & Implementation Details
+## Decisions Made & Architecture
 
-1. **Rebranding**:
-   - Rebranded app title and metadata to **CivicSpeak** across [AppHeader.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppHeader.jsx), [index.html](file:///d:/Git/public-infra-system/index.html), and [package.json](file:///d:/Git/public-infra-system/package.json).
+1. **User Approval Access Flow**:
+   - Integrated `approval_status` (`pending`, `approved`, `rejected`) into `AuthProvider` / `useAuth`.
+   - Created [ApprovalGuard.jsx](file:///d:/Git/public-infra-system/src/routes/guards/ApprovalGuard.jsx) protecting citizen endpoints (`/report/new`, etc.).
+   - Created [WaitingApprovalPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/WaitingApprovalPage.jsx) (`/waiting-approval`).
+   - Implemented WhatsApp deep link `https://wa.me/<whatsapp_number>?text=...` using setting from `public.app_settings`.
+   - Added automatic role & approval based login redirects in [LoginPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/LoginPage.jsx) and [SignupPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/SignupPage.jsx).
 
-2. **OpenRouter AI Integration**:
-   - Built [server/lib/openRouterClient.js](file:///d:/Git/public-infra-system/server/lib/openRouterClient.js) using OpenRouter's OpenAI-compatible Chat Completions API (`POST https://openrouter.ai/api/v1/chat/completions`).
-   - Configured model default to `google/gemma-4-26b-a4b-it:free` (multimodal vision + text, no credit card required).
-   - Updated `server/.env` and `server/.env.example` to use `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`.
-   - Updated [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js) to call OpenRouter.
-   - Deprecated `geminiClient.js` and removed all `GEMINI_*` env variables.
+2. **Super Admin Control Panel (Users + Settings)**:
+   - Updated [AdminUsersPage.jsx](file:///d:/Git/public-infra-system/src/features/admin/AdminUsersPage.jsx) with tab navigation: **User Management** and **System Settings**.
+   - User Management: Displays user table with column sorting (`TableSortLabel`), pagination (10/page), approval status chips, and **[ Approve ]** / **[ Reject ]** action buttons.
+   - **Self-Protection Rule**: Locked role & approval status controls for the currently logged-in Super Admin row (`u.role === 'ADMIN'`).
+   - System Settings: Edit `whatsapp_number`, `geofence_center_lat`, `geofence_center_lng`, and `geofence_radius_km` saved to `public.app_settings`.
 
-3. **Opt-In AI Analysis Flow**:
-   - Added a `Checkbox` labeled **"AI Fill-Up (auto-fill title, description & category)"**, unchecked by default, in [PhotoCaptureStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/PhotoCaptureStep.jsx).
-   - **Checkbox Unchecked (Default)**: Primary button reads "Continue". Clicking it compresses the photo and moves directly to Step 2 with empty fields for manual entry — no HTTP request is made to the Express AI endpoint.
-   - **Checkbox Checked**: Primary button reads "Analyze Photo with AI". Clicking it calls OpenRouter and populates title, description, and category.
-   - Updated [AutoFillReviewStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/AutoFillReviewStep.jsx) and [ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) to support the optional AI flow seamlessly.
+3. **Table Pagination & Column Sorting**:
+   - Enhanced [AdminUsersPage.jsx](file:///d:/Git/public-infra-system/src/features/admin/AdminUsersPage.jsx) and [OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) with 10 rows/page default pagination and interactive column sorting (`asc`/`desc` visual indicators).
+   - Resets page to 1 upon sort parameter changes.
+
+4. **Geofence Validation**:
+   - Implemented Haversine formula distance calculation in [src/lib/geofence.js](file:///d:/Git/public-infra-system/src/lib/geofence.js).
+   - Embedded geofence check in [ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx), blocking submission if GPS coordinates exceed the configured radius from the center point.
+
+5. **Official Dashboard & Importance Signal (Likes)**:
+   - Added prominent **❤️ Like Count** column to [OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) so officials see citizen priority.
+   - Enabled column sorting by `like_count`, `created_at`, `title`, `category`, and `status`.
+
+6. **Mobile-First Responsiveness & Express API Protection**:
+   - Optimized container padding and form filter controls for mobile screen widths (`360px`, `375px`, `390px`, `412px`).
+   - Added in-memory IP rate limiting (10 requests/min) and payload size checks to [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js).
 
 ---
 
 ## Files Modified & Created
 
 ### New Files Created
-- [server/lib/openRouterClient.js](file:///d:/Git/public-infra-system/server/lib/openRouterClient.js) — OpenRouter API integration.
+- [src/features/settings/api.js](file:///d:/Git/public-infra-system/src/features/settings/api.js) — App settings API module.
+- [src/lib/geofence.js](file:///d:/Git/public-infra-system/src/lib/geofence.js) — Haversine distance & geofence validation utility.
+- [src/routes/guards/ApprovalGuard.jsx](file:///d:/Git/public-infra-system/src/routes/guards/ApprovalGuard.jsx) — User approval route guard.
+- [src/features/auth/WaitingApprovalPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/WaitingApprovalPage.jsx) — Waiting for approval page with WhatsApp request.
 
 ### Files Modified
-- [src/components/layout/AppHeader.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppHeader.jsx) — Rebranded to CivicSpeak.
-- [index.html](file:///d:/Git/public-infra-system/index.html) — Updated page title to CivicSpeak.
-- [package.json](file:///d:/Git/public-infra-system/package.json) — Updated package name to civicspeak.
-- [server/.env](file:///d:/Git/public-infra-system/server/.env) & [server/.env.example](file:///d:/Git/public-infra-system/server/.env.example) — Configured OpenRouter environment variables.
-- [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js) — Routed AI requests to OpenRouter.
-- [server/lib/geminiClient.js](file:///d:/Git/public-infra-system/server/lib/geminiClient.js) — Deprecated.
-- [src/features/reportSubmission/components/PhotoCaptureStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/PhotoCaptureStep.jsx) — Added opt-in AI checkbox and dynamic button text.
-- [src/features/reportSubmission/components/AutoFillReviewStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/AutoFillReviewStep.jsx) — Added support for optional AI fill-up messaging.
-- [src/features/reportSubmission/ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) — Integrated opt-in AI state handling.
+- [src/hooks/useAuth.js](file:///d:/Git/public-infra-system/src/hooks/useAuth.js) — Added `approvalStatus`, `isApproved`, `isPending`, `isRejected`.
+- [src/routes/index.jsx](file:///d:/Git/public-infra-system/src/routes/index.jsx) — Added `/waiting-approval` route and `ApprovalGuard`.
+- [src/features/auth/LoginPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/LoginPage.jsx) — Role & approval based login redirection.
+- [src/features/auth/SignupPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/SignupPage.jsx) — New citizen redirect to `/waiting-approval`.
+- [src/features/admin/api.js](file:///d:/Git/public-infra-system/src/features/admin/api.js) — Sorting, pagination, and `updateUserApprovalStatus`.
+- [src/features/admin/AdminUsersPage.jsx](file:///d:/Git/public-infra-system/src/features/admin/AdminUsersPage.jsx) — Two-tab interface, user approval controls, admin self-protection, and system settings form.
+- [src/features/officialDashboard/api.js](file:///d:/Git/public-infra-system/src/features/officialDashboard/api.js) — Column sorting and custom pagination.
+- [src/features/officialDashboard/OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) — Interactive sorting, 10 items/page pagination, and prominent Likes display.
+- [src/features/reportSubmission/ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) — Geofence boundary validation before report submission.
+- [src/components/layout/AppShell.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppShell.jsx) — Mobile overflow protection & responsive container padding.
+- [src/features/feed/FeedPage.jsx](file:///d:/Git/public-infra-system/src/features/feed/FeedPage.jsx) — Mobile filter select layout optimization.
+- [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js) — Rate limiting (10 req/min/IP) and payload size limit.
 
 ---
 
 ## Database Changes & SQL Migrations
-- Migration `003_fix_role_recursion.sql` (`current_user_role` SECURITY DEFINER fix) was previously executed by the user in Supabase. No new SQL migrations required for this plan.
+- Migration `004_approval_and_settings.sql` (added `users.approval_status`, `public.app_settings`, and `enforce_role_change_admin_only` trigger) was executed in Supabase by the user.
 
 ---
 
-## What YOU (User) Need to Do
+## Verification Steps for User
 
-1. **Set OpenRouter API Key**:
-   - Get a free key at [https://openrouter.ai/keys](https://openrouter.ai/keys) (no credit card required).
-   - Add `OPENROUTER_API_KEY=your_key_here` into `server/.env`.
-2. **Restart Express Server**:
-   - In terminal `server/`, restart `npm start` so `.env` reloads.
-3. **Run Build Verification**:
-   - Execute `npm run build` in root to confirm clean compilation.
-4. **Test Submissions**:
-   - Test submitting a report with **AI Fill-Up OFF** (should skip AI API call entirely).
-   - Test submitting a report with **AI Fill-Up ON** (should call OpenRouter and populate details).
+1. **Build Check**:
+   Execute in terminal:
+   ```bash
+   npm run build
+   ```
+2. **Approval Flow Testing**:
+   - Register a new citizen account → confirm redirect to `/waiting-approval`.
+   - Click **Ask Permission via WhatsApp** → confirm WhatsApp deep link.
+   - Log in as Admin (`samjoshua.paldwin@gmail.com`) → navigate to `/admin` → approve the citizen.
+3. **Table Sorting & Pagination Testing**:
+   - Test sorting columns (Likes, Date, Name) on Admin and Official tables.
+4. **Geofence Testing**:
+   - Configure Geofence center & radius in Admin Settings -> System Settings tab.
+   - Submit a report outside the allowed radius to verify distance blocking.

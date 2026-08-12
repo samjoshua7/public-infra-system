@@ -11,16 +11,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Chip,
   Button,
   Pagination,
   Avatar,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
@@ -45,8 +45,13 @@ export const OfficialDashboardPage = () => {
   const [reports, setReports] = useState([]);
   const [statusTab, setStatusTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Sorting State
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,7 +63,9 @@ export const OfficialDashboardPage = () => {
       const data = await listReportsForOfficial({
         status: statusTab,
         page,
-        pageSize: 10,
+        pageSize,
+        sortBy,
+        sortOrder,
       });
       setReports(data.reports);
       setTotalPages(data.totalPages || 1);
@@ -69,7 +76,7 @@ export const OfficialDashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusTab, page]);
+  }, [statusTab, page, pageSize, sortBy, sortOrder]);
 
   useEffect(() => {
     loadOfficialReports();
@@ -77,6 +84,16 @@ export const OfficialDashboardPage = () => {
 
   const handleTabChange = (_, newValue) => {
     setStatusTab(newValue);
+    setPage(1);
+  };
+
+  const handleSortRequest = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
     setPage(1);
   };
 
@@ -102,7 +119,7 @@ export const OfficialDashboardPage = () => {
           </Typography>
         </Box>
         <Typography variant="body1" color="text.secondary">
-          Monitor incoming civic infrastructure reports, review details, and advance status through the resolution pipeline.
+          Monitor incoming civic infrastructure reports, track community likes, and advance report status through resolution.
         </Typography>
       </Box>
 
@@ -138,14 +155,61 @@ export const OfficialDashboardPage = () => {
       ) : (
         <>
           <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-            <Table sx={{ minWidth: 700 }} aria-label="official reports table">
+            <Table sx={{ minWidth: 750 }} aria-label="official reports table">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Report</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    <TableSortLabel
+                      active={sortBy === 'title'}
+                      direction={sortBy === 'title' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('title')}
+                    >
+                      Report Title
+                    </TableSortLabel>
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    <TableSortLabel
+                      active={sortBy === 'category'}
+                      direction={sortBy === 'category' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('category')}
+                    >
+                      Category
+                    </TableSortLabel>
+                  </TableCell>
+
                   <TableCell sx={{ fontWeight: 700 }}>Reporter</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Submitted</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    <TableSortLabel
+                      active={sortBy === 'created_at'}
+                      direction={sortBy === 'created_at' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('created_at')}
+                    >
+                      Submitted
+                    </TableSortLabel>
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    <TableSortLabel
+                      active={sortBy === 'like_count'}
+                      direction={sortBy === 'like_count' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('like_count')}
+                    >
+                      Importance (Likes)
+                    </TableSortLabel>
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    <TableSortLabel
+                      active={sortBy === 'status'}
+                      direction={sortBy === 'status' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('status')}
+                    >
+                      Status
+                    </TableSortLabel>
+                  </TableCell>
+
                   <TableCell align="right" sx={{ fontWeight: 700 }}>
                     Action
                   </TableCell>
@@ -218,6 +282,18 @@ export const OfficialDashboardPage = () => {
 
                       <TableCell>
                         <Typography variant="body2">{formatDate(r.created_at)}</Typography>
+                      </TableCell>
+
+                      {/* Citizen Importance Signal (Likes) */}
+                      <TableCell>
+                        <Chip
+                          icon={<FavoriteIcon fontSize="small" color="error" />}
+                          label={`${r.like_count || 0} ${r.like_count === 1 ? 'like' : 'likes'}`}
+                          size="small"
+                          variant="outlined"
+                          color={r.like_count > 5 ? 'error' : 'default'}
+                          sx={{ fontWeight: 700 }}
+                        />
                       </TableCell>
 
                       <TableCell>

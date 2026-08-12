@@ -138,7 +138,7 @@ export const FeedPage = () => {
             </Typography>
           </Box>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flexGrow: { xs: 1, sm: 0 } }}>
             <InputLabel id="category-filter-label">Category</InputLabel>
             <Select
               labelId="category-filter-label"
@@ -158,7 +158,7 @@ export const FeedPage = () => {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flexGrow: { xs: 1, sm: 0 } }}>
             <InputLabel id="status-filter-label">Status</InputLabel>
             <Select
               labelId="status-filter-label"

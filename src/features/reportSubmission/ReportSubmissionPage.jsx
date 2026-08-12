@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { uploadReportPhoto, createIssueReport } from './api';
+import { getAppSettings } from '../settings/api';
+import { validateGeofence } from '../../lib/geofence';
 import { analyzeReportPhoto } from '../../lib/aiClient';
 import { compressImage } from '../../lib/imageCompression';
 import { PhotoCaptureStep } from './components/PhotoCaptureStep';
@@ -28,7 +30,7 @@ export const ReportSubmissionPage = () => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('pothole');
 
-  // Opt-in AI State (disabled by default per EXECUTION_PLAN_03.md)
+  // Opt-in AI State
   const [aiFillUpEnabled, setAiFillUpEnabled] = useState(false);
 
   // Status State
@@ -69,6 +71,29 @@ export const ReportSubmissionPage = () => {
 
     setFormError(null);
 
+    // Geofence Validation Check
+    try {
+      const settings = await getAppSettings();
+      if (settings?.geofence_center_lat != null && settings?.geofence_center_lng != null && settings?.geofence_radius_km > 0) {
+        const geoResult = validateGeofence(
+          coords.latitude,
+          coords.longitude,
+          settings.geofence_center_lat,
+          settings.geofence_center_lng,
+          settings.geofence_radius_km
+        );
+
+        if (!geoResult.isWithin) {
+          setFormError(
+            `Report location is outside the allowed civic service area (${geoResult.distanceKm} km away from service center; maximum allowed radius is ${geoResult.radiusKm} km).`
+          );
+          return;
+        }
+      }
+    } catch (gErr) {
+      console.warn('Geofence check warning:', gErr);
+    }
+
     if (aiFillUpEnabled) {
       setAnalyzing(true);
       try {
@@ -85,7 +110,6 @@ export const ReportSubmissionPage = () => {
         setActiveStep(1);
       }
     } else {
-      // Manual path: no AI call made at all
       setAiSuccess(false);
       setActiveStep(1);
     }
@@ -102,6 +126,29 @@ export const ReportSubmissionPage = () => {
     if (!photoFile) {
       setFormError('Photo is missing. Please go back and select a photo.');
       return;
+    }
+
+    // Double check geofence before final database submission
+    try {
+      const settings = await getAppSettings();
+      if (settings?.geofence_center_lat != null && settings?.geofence_center_lng != null && settings?.geofence_radius_km > 0) {
+        const geoResult = validateGeofence(
+          coords.latitude,
+          coords.longitude,
+          settings.geofence_center_lat,
+          settings.geofence_center_lng,
+          settings.geofence_radius_km
+        );
+
+        if (!geoResult.isWithin) {
+          setFormError(
+            `Report location is outside the allowed service area (${geoResult.distanceKm} km away from service center; maximum allowed radius is ${geoResult.radiusKm} km).`
+          );
+          return;
+        }
+      }
+    } catch (gErr) {
+      console.warn('Final geofence check warning:', gErr);
     }
 
     setSubmitting(true);

@@ -3,12 +3,15 @@ import {
   Box,
   Typography,
   Paper,
+  Tabs,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Select,
   MenuItem,
   FormControl,
@@ -18,12 +21,24 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Button,
+  TextField,
+  Grid,
+  Divider,
 } from '@mui/material';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import PersonIcon from '@mui/icons-material/Person';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import SettingsIcon from '@mui/icons-material/Settings';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SaveIcon from '@mui/icons-material/Save';
 
-import { listUsers, updateUserRole } from './api';
+import { listUsers, updateUserRole, updateUserApprovalStatus } from './api';
+import { getAppSettings, updateAppSettings } from '../settings/api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
@@ -32,14 +47,30 @@ import { useAuth } from '../../hooks/useAuth';
 export const AdminUsersPage = () => {
   const { user: currentUser, refreshProfile } = useAuth();
 
+  const [activeTab, setActiveTab] = useState(0); // 0: User Management, 1: System Settings
+
+  // User Management State
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Sorting state
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingUserId, setUpdatingUserId] = useState(null);
+
+  // System Settings State
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [geofenceLat, setGeofenceLat] = useState('');
+  const [geofenceLng, setGeofenceLng] = useState('');
+  const [geofenceRadius, setGeofenceRadius] = useState('');
 
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
@@ -47,7 +78,7 @@ export const AdminUsersPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listUsers({ page, pageSize: 15 });
+      const data = await listUsers({ page, pageSize, sortBy, sortOrder });
       setUsers(data.users);
       setTotalPages(data.totalPages || 1);
       setTotalCount(data.totalCount || 0);
@@ -57,13 +88,39 @@ export const AdminUsersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, pageSize, sortBy, sortOrder]);
+
+  const loadSettings = useCallback(async () => {
+    setSettingsLoading(true);
+    try {
+      const settings = await getAppSettings();
+      setWhatsappNumber(settings.whatsapp_number || '');
+      setGeofenceLat(settings.geofence_center_lat != null ? settings.geofence_center_lat : '');
+      setGeofenceLng(settings.geofence_center_lng != null ? settings.geofence_center_lng : '');
+      setGeofenceRadius(settings.geofence_radius_km != null ? settings.geofence_radius_km : '');
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    if (activeTab === 0) loadUsers();
+    else if (activeTab === 1) loadSettings();
+  }, [activeTab, loadUsers, loadSettings]);
 
-  const handleRoleChange = async (userId, targetUserEmail, newRole) => {
+  const handleSortRequest = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
+
+  const handleRoleChange = async (userId, targetEmail, newRole) => {
     setUpdatingUserId(userId);
     try {
       const updated = await updateUserRole(userId, newRole);
@@ -72,13 +129,10 @@ export const AdminUsersPage = () => {
       );
       setToast({
         open: true,
-        message: `Updated role for ${targetUserEmail} to ${newRole}`,
+        message: `Updated role for ${targetEmail} to ${newRole}`,
         severity: 'success',
       });
-
-      if (userId === currentUser?.id) {
-        await refreshProfile();
-      }
+      if (userId === currentUser?.id) await refreshProfile();
     } catch (err) {
       console.error('Role update failed:', err);
       setToast({
@@ -86,10 +140,61 @@ export const AdminUsersPage = () => {
         message: err.message || 'Failed to update user role.',
         severity: 'error',
       });
-      // Refresh list to revert selection state
       loadUsers();
     } finally {
       setUpdatingUserId(null);
+    }
+  };
+
+  const handleApprovalChange = async (userId, targetEmail, newApproval) => {
+    setUpdatingUserId(userId);
+    try {
+      const updated = await updateUserApprovalStatus(userId, newApproval);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, approval_status: updated.approval_status } : u))
+      );
+      setToast({
+        open: true,
+        message: `Set approval status for ${targetEmail} to ${newApproval}`,
+        severity: 'success',
+      });
+    } catch (err) {
+      console.error('Approval update failed:', err);
+      setToast({
+        open: true,
+        message: err.message || 'Failed to update user approval status.',
+        severity: 'error',
+      });
+      loadUsers();
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    try {
+      await updateAppSettings({
+        whatsapp_number: whatsappNumber,
+        geofence_center_lat: geofenceLat,
+        geofence_center_lng: geofenceLng,
+        geofence_radius_km: geofenceRadius,
+      });
+      setToast({
+        open: true,
+        message: 'System settings updated successfully.',
+        severity: 'success',
+      });
+    } catch (err) {
+      console.error('Save settings failed:', err);
+      setToast({
+        open: true,
+        message: err.message || 'Failed to update settings.',
+        severity: 'error',
+      });
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -112,117 +217,337 @@ export const AdminUsersPage = () => {
     return <Chip icon={<PersonIcon />} label="Citizen" color="default" size="small" sx={{ fontWeight: 600 }} />;
   };
 
+  const getApprovalBadge = (status) => {
+    if (status === 'approved') {
+      return <Chip icon={<CheckCircleIcon />} label="Approved" color="success" size="small" variant="outlined" sx={{ fontWeight: 700 }} />;
+    }
+    if (status === 'rejected') {
+      return <Chip icon={<CancelIcon />} label="Rejected" color="error" size="small" variant="outlined" sx={{ fontWeight: 700 }} />;
+    }
+    return <Chip icon={<HourglassEmptyIcon />} label="Pending" color="warning" size="small" variant="filled" sx={{ fontWeight: 700 }} />;
+  };
+
   return (
     <Box sx={{ pb: 6 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
           <Avatar sx={{ bgcolor: 'error.main', width: 40, height: 40 }}>
             <AdminPanelSettingsIcon />
           </Avatar>
           <Typography variant="h4" component="h1" fontWeight="700">
-            Admin User & Role Management
+            Super Admin Control Panel
           </Typography>
         </Box>
         <Typography variant="body1" color="text.secondary">
-          Manage user accounts and re-assign operational roles across the platform.
+          Manage user accounts, process citizen registration requests, and configure system geofencing.
         </Typography>
       </Box>
 
-      {/* Content */}
-      <ErrorAlert message={error} onRetry={loadUsers} />
+      {/* Tabs */}
+      <Paper sx={{ mb: 3, borderRadius: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, val) => setActiveTab(val)}
+          indicatorColor="primary"
+          textColor="primary"
+        >
+          <Tab icon={<PersonIcon />} iconPosition="start" label="User & Approval Management" sx={{ fontWeight: 600 }} />
+          <Tab icon={<SettingsIcon />} iconPosition="start" label="System Settings (WhatsApp & Geofence)" sx={{ fontWeight: 600 }} />
+        </Tabs>
+      </Paper>
 
-      {loading ? (
-        <LoadingSkeleton count={5} />
-      ) : users.length === 0 ? (
-        <EmptyState
-          title="No Users Found"
-          description="No registered user accounts found in the database."
-          actionText="Refresh"
-          onAction={loadUsers}
-        />
-      ) : (
+      {/* TAB 0: USER MANAGEMENT */}
+      {activeTab === 0 && (
         <>
-          <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-            <Table sx={{ minWidth: 650 }} aria-label="user roles table">
-              <TableHead sx={{ bgcolor: 'action.hover' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>User</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Current Role</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Date Joined</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>
-                    Change Role
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
-                          {(u.name || u.email || 'U').charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight="700">
-                            {u.name || 'User'}
-                            {u.id === currentUser?.id && ' (You)'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
+          <ErrorAlert message={error} onRetry={loadUsers} />
 
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {u.email}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>{getRoleBadge(u.role)}</TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDate(u.created_at)}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <FormControl size="small" sx={{ minWidth: 170 }}>
-                        <Select
-                          value={u.role}
-                          onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
-                          disabled={updatingUserId === u.id}
-                          startAdornment={
-                            updatingUserId === u.id ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null
-                          }
-                          sx={{ fontSize: '0.875rem', fontWeight: 600 }}
+          {loading ? (
+            <LoadingSkeleton count={5} />
+          ) : users.length === 0 ? (
+            <EmptyState
+              title="No Users Found"
+              description="No registered user accounts found in the database."
+              actionText="Refresh"
+              onAction={loadUsers}
+            />
+          ) : (
+            <>
+              <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <Table sx={{ minWidth: 750 }} aria-label="user management table">
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <TableSortLabel
+                          active={sortBy === 'name'}
+                          direction={sortBy === 'name' ? sortOrder : 'asc'}
+                          onClick={() => handleSortRequest('name')}
                         >
-                          <MenuItem value="CITIZEN">Citizen</MenuItem>
-                          <MenuItem value="GOVERNMENT_OFFICIAL">Government Official</MenuItem>
-                          <MenuItem value="ADMIN">Admin</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                          User Name
+                        </TableSortLabel>
+                      </TableCell>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color="primary"
-                shape="rounded"
-              />
-            </Box>
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <TableSortLabel
+                          active={sortBy === 'email'}
+                          direction={sortBy === 'email' ? sortOrder : 'asc'}
+                          onClick={() => handleSortRequest('email')}
+                        >
+                          Email
+                        </TableSortLabel>
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <TableSortLabel
+                          active={sortBy === 'role'}
+                          direction={sortBy === 'role' ? sortOrder : 'asc'}
+                          onClick={() => handleSortRequest('role')}
+                        >
+                          Role
+                        </TableSortLabel>
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <TableSortLabel
+                          active={sortBy === 'approval_status'}
+                          direction={sortBy === 'approval_status' ? sortOrder : 'asc'}
+                          onClick={() => handleSortRequest('approval_status')}
+                        >
+                          Approval Status
+                        </TableSortLabel>
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <TableSortLabel
+                          active={sortBy === 'created_at'}
+                          direction={sortBy === 'created_at' ? sortOrder : 'asc'}
+                          onClick={() => handleSortRequest('created_at')}
+                        >
+                          Date Joined
+                        </TableSortLabel>
+                      </TableCell>
+
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>
+                        Actions & Role
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users.map((u) => {
+                      const isSelf = u.id === currentUser?.id;
+                      const isAdminRole = u.role === 'ADMIN';
+
+                      return (
+                        <TableRow key={u.id} hover>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
+                                {(u.name || u.email || 'U').charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="subtitle2" fontWeight="700">
+                                  {u.name || 'User'}
+                                  {isSelf && ' (You)'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {u.email}
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell>{getRoleBadge(u.role)}</TableCell>
+
+                          <TableCell>{getApprovalBadge(u.approval_status)}</TableCell>
+
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {formatDate(u.created_at)}
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell align="right">
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                              {/* Approve / Reject Actions */}
+                              {!isAdminRole && (
+                                <>
+                                  {u.approval_status !== 'approved' && (
+                                    <Button
+                                      size="small"
+                                      variant="contained"
+                                      color="success"
+                                      disabled={updatingUserId === u.id}
+                                      onClick={() => handleApprovalChange(u.id, u.email, 'approved')}
+                                    >
+                                      Approve
+                                    </Button>
+                                  )}
+                                  {u.approval_status !== 'rejected' && (
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="error"
+                                      disabled={updatingUserId === u.id}
+                                      onClick={() => handleApprovalChange(u.id, u.email, 'rejected')}
+                                    >
+                                      Reject
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Role Selector */}
+                              <FormControl size="small" sx={{ minWidth: 140 }}>
+                                <Select
+                                  value={u.role}
+                                  onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
+                                  disabled={updatingUserId === u.id || isAdminRole}
+                                  startAdornment={
+                                    updatingUserId === u.id ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null
+                                  }
+                                  sx={{ fontSize: '0.85rem', fontWeight: 600 }}
+                                >
+                                  <MenuItem value="CITIZEN">Citizen</MenuItem>
+                                  <MenuItem value="GOVERNMENT_OFFICIAL">Official</MenuItem>
+                                  <MenuItem value="ADMIN" disabled>Admin</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                    color="primary"
+                    shape="rounded"
+                  />
+                </Box>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* TAB 1: SYSTEM SETTINGS */}
+      {activeTab === 1 && (
+        <Paper component="form" onSubmit={handleSaveSettings} sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3 }}>
+          <Typography variant="h6" fontWeight="700" gutterBottom>
+            Application & Security Settings
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Configure WhatsApp access request details and regional geofence boundaries.
+          </Typography>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Section 1: WhatsApp Access Request */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <WhatsAppIcon color="success" />
+              <Typography variant="subtitle1" fontWeight="700">
+                WhatsApp Access Request Number
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" paragraph display="block">
+              Phone number that pending citizens will contact to request account approval (include country code, e.g. +919876543210).
+            </Typography>
+
+            <TextField
+              fullWidth
+              size="small"
+              label="WhatsApp Phone Number"
+              placeholder="+919876543210"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              disabled={settingsLoading || settingsSaving}
+              sx={{ maxWidth: 400 }}
+            />
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Section 2: Geofence Boundaries */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <LocationOnIcon color="primary" />
+              <Typography variant="subtitle1" fontWeight="700">
+                Geofence & Locked Service Area
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" paragraph display="block">
+              Restrict report submissions to coordinates within a specified radius (in km) from a central point. Leave empty to disable geofence restriction.
+            </Typography>
+
+            <Grid container spacing={2} sx={{ maxWidth: 600 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  inputProps={{ step: 'any' }}
+                  label="Center Latitude"
+                  placeholder="e.g. 13.0827"
+                  value={geofLat}
+                  onChange={(e) => setGeofenceLat(e.target.value)}
+                  disabled={settingsLoading || settingsSaving}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  inputProps={{ step: 'any' }}
+                  label="Center Longitude"
+                  placeholder="e.g. 80.2707"
+                  value={geofLng}
+                  onChange={(e) => setGeofenceLng(e.target.value)}
+                  disabled={settingsLoading || settingsSaving}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  inputProps={{ step: 'any' }}
+                  label="Allowed Service Radius (km)"
+                  placeholder="e.g. 25"
+                  value={geofenceRadius}
+                  onChange={(e) => setGeofenceRadius(e.target.value)}
+                  disabled={settingsLoading || settingsSaving}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={settingsSaving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              disabled={settingsLoading || settingsSaving}
+              sx={{ fontWeight: 700 }}
+            >
+              {settingsSaving ? 'Saving Settings...' : 'Save Settings'}
+            </Button>
+          </Box>
+        </Paper>
       )}
 
       {/* Snackbar Toast */}

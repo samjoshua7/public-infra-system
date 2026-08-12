@@ -11,11 +11,14 @@ export const AppShell = ({ children }) => {
         minHeight: '100vh',
         bgcolor: 'background.default',
         color: 'text.primary',
+        overflowX: 'hidden',
       }}
     >
       <AppHeader />
-      <Box component="main" sx={{ flexGrow: 1, py: 4 }}>
-        <Container maxWidth="lg">{children}</Container>
+      <Box component="main" sx={{ flexGrow: 1, py: { xs: 2.5, sm: 4 } }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+          {children}
+        </Container>
       </Box>
     </Box>
   );
