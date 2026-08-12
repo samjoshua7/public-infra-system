@@ -8,23 +8,27 @@ import {
   CircularProgress,
   Alert,
   Paper,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 export const PhotoCaptureStep = ({
   photoFile,
   photoPreview,
   onPhotoSelected,
-  onAnalyze,
+  onProceed,
   analyzing,
   geoCoords,
   geoError,
   geoLoading,
   onRetryGeo,
+  aiFillUpEnabled,
+  onToggleAiFillUp,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -120,7 +124,7 @@ export const PhotoCaptureStep = ({
         </Paper>
       ) : (
         <Box>
-          <Card sx={{ mb: 3, overflow: 'hidden' }}>
+          <Card sx={{ mb: 2, overflow: 'hidden' }}>
             <CardMedia
               component="img"
               height="300"
@@ -129,6 +133,29 @@ export const PhotoCaptureStep = ({
               sx={{ objectFit: 'cover' }}
             />
           </Card>
+
+          {/* Opt-In AI Checkbox */}
+          <Paper sx={{ p: 1.5, mb: 3, bgcolor: 'action.hover', borderRadius: 2 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={aiFillUpEnabled}
+                  onChange={(e) => onToggleAiFillUp(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="600">
+                    AI Fill-Up (auto-fill title, description & category)
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Uses OpenRouter AI to analyze your photo and generate report details. Uncheck for manual entry.
+                  </Typography>
+                </Box>
+              }
+            />
+          </Paper>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
             <Button
@@ -141,12 +168,24 @@ export const PhotoCaptureStep = ({
 
             <Button
               variant="contained"
-              color="primary"
-              startIcon={analyzing ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
-              onClick={onAnalyze}
+              color={aiFillUpEnabled ? 'secondary' : 'primary'}
+              startIcon={
+                analyzing ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : aiFillUpEnabled ? (
+                  <AutoAwesomeIcon />
+                ) : (
+                  <ArrowForwardIcon />
+                )
+              }
+              onClick={onProceed}
               disabled={analyzing || !geoCoords}
             >
-              {analyzing ? 'Analyzing Photo with AI...' : 'Analyze Photo with AI'}
+              {analyzing
+                ? 'Analyzing Photo with AI...'
+                : aiFillUpEnabled
+                ? 'Analyze Photo with AI'
+                : 'Continue'}
             </Button>
           </Box>
         </Box>

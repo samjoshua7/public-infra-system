@@ -204,6 +204,15 @@ export const FeedPage = () => {
                   isLiked={likedReportIds.has(report.report_id)}
                   onToggleLike={handleToggleLike}
                   isAuth={isAuthenticated}
+                  onReportUpdated={(updated) => {
+                    setReports((prev) =>
+                      prev.map((r) => (r.report_id === updated.report_id ? { ...r, ...updated } : r))
+                    );
+                  }}
+                  onReportDeleted={(deletedId) => {
+                    setReports((prev) => prev.filter((r) => r.report_id !== deletedId));
+                    setTotalCount((prev) => Math.max(0, prev - 1));
+                  }}
                 />
               </Grid>
             ))}

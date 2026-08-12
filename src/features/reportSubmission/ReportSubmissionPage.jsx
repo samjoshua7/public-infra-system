@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { uploadReportPhoto, createIssueReport } from './api';
 import { analyzeReportPhoto } from '../../lib/aiClient';
+import { compressImage } from '../../lib/imageCompression';
 import { PhotoCaptureStep } from './components/PhotoCaptureStep';
 import { AutoFillReviewStep } from './components/AutoFillReviewStep';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
@@ -22,13 +23,16 @@ export const ReportSubmissionPage = () => {
   // Form State
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState('');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('pothole');
 
+  // Opt-in AI State (disabled by default per EXECUTION_PLAN_03.md)
+  const [aiFillUpEnabled, setAiFillUpEnabled] = useState(false);
+
   // Status State
+  const [compressing, setCompressing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiSuccess, setAiSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -41,31 +45,34 @@ export const ReportSubmissionPage = () => {
     });
   }, [getCoordinates]);
 
-  const handlePhotoSelected = (file) => {
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-    setUploadedPhotoUrl('');
+  const handlePhotoSelected = async (file) => {
     setFormError(null);
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(file, { maxDimension: 1600, quality: 0.72 });
+      setPhotoFile(compressed);
+      setPhotoPreview(URL.createObjectURL(compressed));
+    } catch (err) {
+      console.error('Image compression error:', err);
+      setFormError('Could not process that image. Please try a different photo.');
+    } finally {
+      setCompressing(false);
+    }
   };
 
-  const handleAnalyzePhoto = async () => {
+  const handleProceed = async () => {
     if (!photoFile) return;
     if (!coords) {
       setFormError('Location coordinates are required to submit a report.');
       return;
     }
 
-    setAnalyzing(true);
     setFormError(null);
 
-    try {
-      // 1. Upload photo to Supabase Storage
-      const publicUrl = await uploadReportPhoto(photoFile, user?.id || 'anon');
-      setUploadedPhotoUrl(publicUrl);
-
-      // 2. Call Express AI service
+    if (aiFillUpEnabled) {
+      setAnalyzing(true);
       try {
-        const aiData = await analyzeReportPhoto(publicUrl);
+        const aiData = await analyzeReportPhoto(photoFile);
         if (aiData.title) setTitle(aiData.title);
         if (aiData.description) setDescription(aiData.description);
         if (aiData.category) setCategory(aiData.category);
@@ -73,15 +80,14 @@ export const ReportSubmissionPage = () => {
       } catch (aiErr) {
         console.warn('AI analysis fallback:', aiErr.message);
         setAiSuccess(false);
-        // Fallback: don't block user, proceed to step 2 with empty fields
+      } finally {
+        setAnalyzing(false);
+        setActiveStep(1);
       }
-
+    } else {
+      // Manual path: no AI call made at all
+      setAiSuccess(false);
       setActiveStep(1);
-    } catch (err) {
-      console.error('Photo processing error:', err);
-      setFormError(err.message || 'Failed to upload photo. Please try again.');
-    } finally {
-      setAnalyzing(false);
     }
   };
 
@@ -93,16 +99,18 @@ export const ReportSubmissionPage = () => {
       setFormError('Geolocation permission is required to post a public report.');
       return;
     }
-    if (!uploadedPhotoUrl) {
-      setFormError('Photo upload URL is missing.');
+    if (!photoFile) {
+      setFormError('Photo is missing. Please go back and select a photo.');
       return;
     }
 
     setSubmitting(true);
 
     try {
+      const photoUrl = await uploadReportPhoto(photoFile, user?.id || 'anon');
+
       const newReport = await createIssueReport({
-        photoUrl: uploadedPhotoUrl,
+        photoUrl,
         title,
         description,
         category,
@@ -137,12 +145,14 @@ export const ReportSubmissionPage = () => {
             photoFile={photoFile}
             photoPreview={photoPreview}
             onPhotoSelected={handlePhotoSelected}
-            onAnalyze={handleAnalyzePhoto}
-            analyzing={analyzing}
+            onProceed={handleProceed}
+            analyzing={analyzing || compressing}
             geoCoords={coords}
             geoError={geoError}
             geoLoading={geoLoading}
             onRetryGeo={getCoordinates}
+            aiFillUpEnabled={aiFillUpEnabled}
+            onToggleAiFillUp={setAiFillUpEnabled}
           />
         ) : (
           <AutoFillReviewStep
@@ -154,6 +164,7 @@ export const ReportSubmissionPage = () => {
             setCategory={setCategory}
             photoPreview={photoPreview}
             aiSuccess={aiSuccess}
+            aiFillUpEnabled={aiFillUpEnabled}
             onSubmit={handleSubmitReport}
             onBack={() => setActiveStep(0)}
             submitting={submitting}

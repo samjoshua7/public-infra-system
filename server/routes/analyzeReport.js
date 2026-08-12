@@ -1,17 +1,17 @@
 import express from 'express';
-import { analyzeReportImage } from '../lib/geminiClient.js';
+import { analyzeReportImage } from '../lib/openRouterClient.js';
 
 const router = express.Router();
 
 router.post('/', async (req, res) => {
   try {
-    const { photoUrl } = req.body;
+    const { imageBase64, mimeType } = req.body;
 
-    if (!photoUrl || typeof photoUrl !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid photoUrl parameter' });
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({ error: 'Missing or invalid imageBase64 parameter' });
     }
 
-    const result = await analyzeReportImage(photoUrl);
+    const result = await analyzeReportImage(imageBase64, mimeType || 'image/jpeg');
     return res.json(result);
   } catch (error) {
     console.error('Error analyzing report photo:', error);

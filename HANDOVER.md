@@ -1,44 +1,62 @@
-# HANDOVER.md — Application Stabilization & MUI Theme Fixes
+# HANDOVER.md — EXECUTION_PLAN_03.md: Rebrand, OpenRouter AI, Opt-In Checkbox
 
 ## Objective
-Fix the MUI theme crash (`Cannot read properties of undefined (reading 'main')`), verify Vite 7 dependency stability, confirm direct Supabase authentication without custom 2FA screens, resolve Gemini AI 500/404 model errors, and remove debug console spam.
+Rebrand application from **CivicPulse** to **CivicSpeak**, replace Gemini with **OpenRouter** (`google/gemma-4-26b-a4b-it:free`) as the AI photo analysis provider, and make AI photo analysis **opt-in** via a checkbox (unchecked by default).
 
-## Decisions Made & Root Cause Analysis
-1. **MUI Button Crash Fix**:
-   - **Root Cause**: `ReportDetailPage.jsx` and `ReportCard.jsx` were passing `color="default"` to MUI `Button` and `IconButton`. In MUI v5, `default` is not a valid button color. MUI's styled root component attempted to read `theme.palette.default.main`, which evaluated to `undefined.main`, crashing the app.
-   - **Theme Architecture Fix**: Added fallback `default` color object (`{ main: '#64748B', light: '#94A3B8', dark: '#334155', contrastText: '#FFFFFF' }`) as well as explicit `error`, `warning`, `info`, `success` palette definitions to `src/app/theme/theme.js`.
-   - **Component Fix**: Updated `ReportDetailPage.jsx` and `ReportCard.jsx` to use valid MUI v5 button color props (`color="inherit"`).
+---
 
-2. **Vite 7 Dependency Verification**:
-   - Verified `package.json` and `package-lock.json` lock `vite` to version `7.3.6` and `@vitejs/plugin-react` to `5.2.0`. All MUI components and icon path imports are fully compatible.
+## Decisions Made & Implementation Details
 
-3. **Supabase 2FA / Email Confirmation**:
-   - Verified that no custom 2FA, email verification, or OTP confirmation code exists in the repo. Auth flow remains direct (`login -> Supabase auth -> load profile -> enter application`).
+1. **Rebranding**:
+   - Rebranded app title and metadata to **CivicSpeak** across [AppHeader.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppHeader.jsx), [index.html](file:///d:/Git/public-infra-system/index.html), and [package.json](file:///d:/Git/public-infra-system/package.json).
 
-4. **Gemini AI Service Fix**:
-   - **Root Cause**: `server/lib/geminiClient.js` and `server/.env` specified `GEMINI_MODEL=gemini-2.5-flash-lite`, an invalid model identifier that caused Google's API to return HTTP 404 (Not Found).
-   - **Fix**: Updated `GEMINI_MODEL` default to `gemini-2.5-flash` in `server/lib/geminiClient.js` and `server/.env`.
-   - Verified graceful fallback logic in `ReportSubmissionPage.jsx` so manual report submission works even if AI analysis fails.
+2. **OpenRouter AI Integration**:
+   - Built [server/lib/openRouterClient.js](file:///d:/Git/public-infra-system/server/lib/openRouterClient.js) using OpenRouter's OpenAI-compatible Chat Completions API (`POST https://openrouter.ai/api/v1/chat/completions`).
+   - Configured model default to `google/gemma-4-26b-a4b-it:free` (multimodal vision + text, no credit card required).
+   - Updated `server/.env` and `server/.env.example` to use `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`.
+   - Updated [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js) to call OpenRouter.
+   - Deprecated `geminiClient.js` and removed all `GEMINI_*` env variables.
 
-5. **Debug Log Cleanup**:
-   - Removed temporary `console.log('[AppHeader DEBUG] ...')` statements from `src/components/layout/AppHeader.jsx`.
+3. **Opt-In AI Analysis Flow**:
+   - Added a `Checkbox` labeled **"AI Fill-Up (auto-fill title, description & category)"**, unchecked by default, in [PhotoCaptureStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/PhotoCaptureStep.jsx).
+   - **Checkbox Unchecked (Default)**: Primary button reads "Continue". Clicking it compresses the photo and moves directly to Step 2 with empty fields for manual entry — no HTTP request is made to the Express AI endpoint.
+   - **Checkbox Checked**: Primary button reads "Analyze Photo with AI". Clicking it calls OpenRouter and populates title, description, and category.
+   - Updated [AutoFillReviewStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/AutoFillReviewStep.jsx) and [ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) to support the optional AI flow seamlessly.
 
-## Files Modified
-1. `src/app/theme/theme.js` — Added explicit `default`, `error`, `warning`, `info`, `success` palette definitions in `createTheme`.
-2. `src/features/reportDetail/ReportDetailPage.jsx` — Updated Button `color` from `'default'` to `'inherit'`.
-3. `src/features/feed/components/ReportCard.jsx` — Updated IconButton `color` from `'default'` to `'inherit'`.
-4. `server/lib/geminiClient.js` — Updated `GEMINI_MODEL` default fallback from `gemini-2.5-flash-lite` to `gemini-2.5-flash`.
-5. `server/.env` — Updated `GEMINI_MODEL` to `gemini-2.5-flash`.
-6. `src/components/layout/AppHeader.jsx` — Removed `[AppHeader DEBUG]` console log statements.
+---
 
-## Database Changes / SQL Migrations
-- None required.
+## Files Modified & Created
 
-## APIs Changed
-- `server/lib/geminiClient.js`: `GEMINI_MODEL` updated to `gemini-2.5-flash`.
+### New Files Created
+- [server/lib/openRouterClient.js](file:///d:/Git/public-infra-system/server/lib/openRouterClient.js) — OpenRouter API integration.
 
-## Remaining TODOs
-- Run `npm run build` to verify clean build output.
+### Files Modified
+- [src/components/layout/AppHeader.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppHeader.jsx) — Rebranded to CivicSpeak.
+- [index.html](file:///d:/Git/public-infra-system/index.html) — Updated page title to CivicSpeak.
+- [package.json](file:///d:/Git/public-infra-system/package.json) — Updated package name to civicspeak.
+- [server/.env](file:///d:/Git/public-infra-system/server/.env) & [server/.env.example](file:///d:/Git/public-infra-system/server/.env.example) — Configured OpenRouter environment variables.
+- [server/routes/analyzeReport.js](file:///d:/Git/public-infra-system/server/routes/analyzeReport.js) — Routed AI requests to OpenRouter.
+- [server/lib/geminiClient.js](file:///d:/Git/public-infra-system/server/lib/geminiClient.js) — Deprecated.
+- [src/features/reportSubmission/components/PhotoCaptureStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/PhotoCaptureStep.jsx) — Added opt-in AI checkbox and dynamic button text.
+- [src/features/reportSubmission/components/AutoFillReviewStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/AutoFillReviewStep.jsx) — Added support for optional AI fill-up messaging.
+- [src/features/reportSubmission/ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) — Integrated opt-in AI state handling.
 
-## Exact Next Task
-- Run `npm run build` or continue with Phase 2 official dashboard development.
+---
+
+## Database Changes & SQL Migrations
+- Migration `003_fix_role_recursion.sql` (`current_user_role` SECURITY DEFINER fix) was previously executed by the user in Supabase. No new SQL migrations required for this plan.
+
+---
+
+## What YOU (User) Need to Do
+
+1. **Set OpenRouter API Key**:
+   - Get a free key at [https://openrouter.ai/keys](https://openrouter.ai/keys) (no credit card required).
+   - Add `OPENROUTER_API_KEY=your_key_here` into `server/.env`.
+2. **Restart Express Server**:
+   - In terminal `server/`, restart `npm start` so `.env` reloads.
+3. **Run Build Verification**:
+   - Execute `npm run build` in root to confirm clean compilation.
+4. **Test Submissions**:
+   - Test submitting a report with **AI Fill-Up OFF** (should skip AI API call entirely).
+   - Test submitting a report with **AI Fill-Up ON** (should call OpenRouter and populate details).

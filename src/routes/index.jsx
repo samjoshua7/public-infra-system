@@ -3,12 +3,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { AppShell } from '../components/layout/AppShell';
 import { ProtectedRoute } from './guards/ProtectedRoute';
+import { RoleGuard } from './guards/RoleGuard';
 
 import { FeedPage } from '../features/feed/FeedPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { SignupPage } from '../features/auth/SignupPage';
 import { ReportSubmissionPage } from '../features/reportSubmission/ReportSubmissionPage';
 import { ReportDetailPage } from '../features/reportDetail/ReportDetailPage';
+import { OfficialDashboardPage } from '../features/officialDashboard/OfficialDashboardPage';
+import { AdminUsersPage } from '../features/admin/AdminUsersPage';
 
 export const AppRoutes = () => {
   return (
@@ -27,6 +30,22 @@ export const AppRoutes = () => {
           }
         />
         <Route path="/report/:id" element={<ReportDetailPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <RoleGuard allowedRoles={['GOVERNMENT_OFFICIAL', 'ADMIN']}>
+              <OfficialDashboardPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <AdminUsersPage />
+            </RoleGuard>
+          }
+        />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>
     </AppShell>

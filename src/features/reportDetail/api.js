@@ -14,6 +14,7 @@ export const getReportDetail = async (reportId) => {
       latitude,
       longitude,
       status,
+      is_hidden,
       like_count,
       comment_count,
       created_at,
@@ -46,6 +47,49 @@ export const listReportComments = async (reportId) => {
 
   if (error) throw error;
   return data || [];
+};
+
+/**
+ * Edit a report's own fields. Only works while status is still 'posted' —
+ * enforced server-side by the enforce_report_edit_rules() trigger (002
+ * migration), so this will throw if the report has already moved past
+ * 'posted' or if the caller isn't the owner/an admin.
+ */
+export const updateReportDetails = async (reportId, { title, description, category }) => {
+  const { data, error } = await supabase
+    .from('issue_reports')
+    .update({ title, description, category })
+    .eq('report_id', reportId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Toggle whether a report is hidden from the public feed. Allowed any time
+ * by the owner or an admin, regardless of status.
+ */
+export const setReportHidden = async (reportId, isHidden) => {
+  const { data, error } = await supabase
+    .from('issue_reports')
+    .update({ is_hidden: isHidden })
+    .eq('report_id', reportId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Delete a report outright. Only allowed while status is still 'posted'
+ * (owner), or any time (admin) — enforced by RLS in the 002 migration.
+ */
+export const deleteReport = async (reportId) => {
+  const { error } = await supabase.from('issue_reports').delete().eq('report_id', reportId);
+  if (error) throw error;
 };
 
 export const addReportComment = async ({ reportId, userId, body }) => {

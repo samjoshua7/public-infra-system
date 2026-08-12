@@ -6,7 +6,7 @@ import { AppRoutes } from '../routes';
 
 export const App = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeModeProvider>
         <AuthProvider>
           <AppRoutes />

@@ -11,8 +11,13 @@ import {
   IconButton,
   Grid,
   Tooltip,
+  Alert,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -21,15 +26,24 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import HistoryIcon from '@mui/icons-material/History';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 
 import {
   getReportDetail,
   listReportComments,
   addReportComment,
   listStatusHistory,
+  setReportHidden,
 } from './api';
 import { fetchUserLikedReportIds, toggleReportLike } from '../feed/api';
+import { EditReportDialog } from './components/EditReportDialog';
+import { DeleteReportConfirmDialog } from './components/DeleteReportConfirmDialog';
+import { StatusUpdateControl } from '../officialDashboard/components/StatusUpdateControl';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 import { useAuth } from '../../hooks/useAuth';
@@ -46,7 +60,8 @@ const categoryLabels = {
 
 export const ReportDetailPage = () => {
   const { id } = useParams();
-  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { user, role, isAuthenticated } = useAuth();
   const { mode } = useThemeMode();
 
   const [report, setReport] = useState(null);
@@ -59,6 +74,12 @@ export const ReportDetailPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Owner/Admin Controls state
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [hiding, setHiding] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -130,11 +151,30 @@ export const ReportDetailPage = () => {
     }
   };
 
+  const handleToggleHide = async () => {
+    setMenuAnchor(null);
+    setHiding(true);
+    try {
+      const updated = await setReportHidden(report.report_id, !report.is_hidden);
+      setReport((prev) => ({ ...prev, is_hidden: updated.is_hidden }));
+    } catch (err) {
+      console.error('Failed to toggle hide:', err);
+      alert(err.message || 'Failed to toggle hide status');
+    } finally {
+      setHiding(false);
+    }
+  };
+
   if (loading) return <LoadingSkeleton type="detail" />;
   if (error || !report) return <ErrorAlert message={error || 'Report not found'} onRetry={loadData} />;
 
   const statusConfig = statusColors[report.status] || statusColors.posted;
   const statusStyle = statusConfig[mode] || statusConfig.light;
+
+  const isOwner = user && report.reporter_id === user.id;
+  const isAdmin = role === 'ADMIN';
+  const canManage = isOwner || isAdmin;
+  const canEditOrDelete = report.status === 'posted' || isAdmin;
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -148,15 +188,87 @@ export const ReportDetailPage = () => {
 
   return (
     <Box sx={{ pb: 6, maxWidth: 900, mx: 'auto' }}>
-      <Button
-        component={RouterLink}
-        to="/feed"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 2 }}
-        color="inherit"
-      >
-        Back to Feed
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Button
+          component={RouterLink}
+          to="/feed"
+          startIcon={<ArrowBackIcon />}
+          color="inherit"
+        >
+          Back to Feed
+        </Button>
+
+        {canManage && (
+          <Box>
+            <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label="manage report">
+              <MoreVertIcon />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={() => setMenuAnchor(null)}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <Tooltip title={!canEditOrDelete ? "Can't edit after action has been taken" : ''} placement="left">
+                <span>
+                  <MenuItem
+                    disabled={!canEditOrDelete}
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      setEditOpen(true);
+                    }}
+                  >
+                    <ListItemIcon>
+                      <EditIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Edit Details</ListItemText>
+                  </MenuItem>
+                </span>
+              </Tooltip>
+
+              <MenuItem onClick={handleToggleHide} disabled={hiding}>
+                <ListItemIcon>
+                  {report.is_hidden ? <VisibilityIcon fontSize="small" /> : <VisibilityOffIcon fontSize="small" />}
+                </ListItemIcon>
+                <ListItemText>{report.is_hidden ? 'Unhide from Feed' : 'Hide from Feed'}</ListItemText>
+              </MenuItem>
+
+              <Tooltip title={!canEditOrDelete ? "Can't delete after action has been taken" : ''} placement="left">
+                <span>
+                  <MenuItem
+                    disabled={!canEditOrDelete}
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      setDeleteOpen(true);
+                    }}
+                    sx={{ color: 'error.main' }}
+                  >
+                    <ListItemIcon>
+                      <DeleteIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText>Delete Report</ListItemText>
+                  </MenuItem>
+                </span>
+              </Tooltip>
+            </Menu>
+          </Box>
+        )}
+      </Box>
+
+      {/* Hidden Banner */}
+      {report.is_hidden && (
+        <Alert severity="warning" icon={<VisibilityOffOutlinedIcon />} sx={{ mb: 3, fontWeight: 600 }}>
+          This report is currently hidden from the public feed. Only you, government officials, and administrators can see it.
+        </Alert>
+      )}
+
+      {/* Official Status Update Control */}
+      <StatusUpdateControl
+        reportId={report.report_id}
+        currentStatus={report.status}
+        onStatusUpdated={loadData}
+      />
 
       {/* Main Report Card */}
       <Paper sx={{ borderRadius: 3, overflow: 'hidden', mb: 4 }}>
@@ -416,6 +528,26 @@ export const ReportDetailPage = () => {
           </Box>
         )}
       </Paper>
+
+      {/* Edit Dialog */}
+      <EditReportDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        report={report}
+        onSaveSuccess={(updated) => {
+          setReport((prev) => ({ ...prev, ...updated }));
+        }}
+      />
+
+      {/* Delete Dialog */}
+      <DeleteReportConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        reportId={report.report_id}
+        onDeleteSuccess={() => {
+          navigate('/feed', { replace: true });
+        }}
+      />
     </Box>
   );
 };

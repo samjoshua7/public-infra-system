@@ -17,6 +17,7 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
       latitude,
       longitude,
       status,
+      is_hidden,
       like_count,
       comment_count,
       created_at,
