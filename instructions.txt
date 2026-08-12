@@ -1,0 +1,34 @@
+What 
+
+start_all.bat
+ Does
+Dependency Verification: Checks if node_modules exists in both the root folder (frontend) and the server/ folder (Express AI service). If missing, it installs them automatically.
+Environment File Check: Checks for .env files in both root and server/. If missing, it copies from .env.example.
+Starts Express AI Backend: Launches npm start inside server/ in a dedicated terminal window (Port 5000).
+Starts Vite Frontend: Launches npm run dev in the root folder in a dedicated terminal window (Port 5173).
+How to Run It
+You can run the servers in either of the following ways:
+
+Option A (Recommended): Run the batch script
+Double-click 
+
+start_all.bat
+ in File Explorer or run this command in your terminal:
+
+cmd
+.\start_all.bat
+Option B: Run manually in separate terminals
+If you prefer to start them manually:
+
+Express AI Server (Terminal 1):
+cmd
+cd server
+npm start
+Vite Frontend (Terminal 2):
+cmd
+npm run dev
+Service URLs & Endpoints
+Service	URL	Purpose
+Vite Frontend App	http://localhost:5173	Main Citizen & Official Web UI
+Express AI Backend	http://localhost:5000	Server-side AI Auto-Fill Service
+Backend Health Check	http://localhost:5000/hea

@@ -1,73 +1,44 @@
-# HANDOVER.md — Public Infrastructure Reporting and Tracking System
+# HANDOVER.md — Application Stabilization & MUI Theme Fixes
 
 ## Objective
-Establish the project documentation baseline (AGENTS, ARCHITECTURE, DATABASE, ROADMAP) for the Public Infrastructure Reporting and Tracking System, replacing the previous printing-press ERP documentation that was carried over from the old project. No application code has been written yet — this handover marks the end of Phase 0 (documentation/foundation) and the starting point for Phase 1 implementation.
+Fix the MUI theme crash (`Cannot read properties of undefined (reading 'main')`), verify Vite 7 dependency stability, confirm direct Supabase authentication without custom 2FA screens, resolve Gemini AI 500/404 model errors, and remove debug console spam.
 
----
+## Decisions Made & Root Cause Analysis
+1. **MUI Button Crash Fix**:
+   - **Root Cause**: `ReportDetailPage.jsx` and `ReportCard.jsx` were passing `color="default"` to MUI `Button` and `IconButton`. In MUI v5, `default` is not a valid button color. MUI's styled root component attempted to read `theme.palette.default.main`, which evaluated to `undefined.main`, crashing the app.
+   - **Theme Architecture Fix**: Added fallback `default` color object (`{ main: '#64748B', light: '#94A3B8', dark: '#334155', contrastText: '#FFFFFF' }`) as well as explicit `error`, `warning`, `info`, `success` palette definitions to `src/app/theme/theme.js`.
+   - **Component Fix**: Updated `ReportDetailPage.jsx` and `ReportCard.jsx` to use valid MUI v5 button color props (`color="inherit"`).
 
-## Decisions Made
-1. **Stack**: React + Vite + Material UI on the frontend, Supabase (Auth + Postgres + Storage + RLS) as the primary backend, Vercel for frontend hosting.
-2. **Express backend, scoped narrowly**: A standalone Express server is used *only* to call the AI vision API for photo auto-fill (title/description/category), since that call requires a provider API key that cannot be exposed in the browser. Express does not duplicate Supabase's role for auth/CRUD/storage. Hosting provider for Express is not yet decided.
-3. **Geolocation**: Captured via the browser Geolocation API at the moment of report submission, not derived from photo EXIF data. Submission is blocked if permission is denied.
-4. **Roles**: CITIZEN (default on signup), GOVERNMENT_OFFICIAL, ADMIN — assigned manually by an admin, not self-selected.
-5. **Status pipeline**: Fixed forward pipeline posted → action_taken → fixed, authoritative in a report_status_history table, with issue_reports.status kept as a denormalized/synced convenience column.
+2. **Vite 7 Dependency Verification**:
+   - Verified `package.json` and `package-lock.json` lock `vite` to version `7.3.6` and `@vitejs/plugin-react` to `5.2.0`. All MUI components and icon path imports are fully compatible.
 
----
+3. **Supabase 2FA / Email Confirmation**:
+   - Verified that no custom 2FA, email verification, or OTP confirmation code exists in the repo. Auth flow remains direct (`login -> Supabase auth -> load profile -> enter application`).
 
-## Files Modified / Created
-- `AGENTS.md` (REWRITTEN — was printing-press ERP constitution, now civic reporting constitution)
-- `ARCHITECTURE.md` (REWRITTEN — was printing-press architecture, now civic reporting architecture with Express AI service)
-- `DATABASE.md` (REWRITTEN — was printing-press schema, now issue_reports/status-history/likes/comments schema)
-- `ROADMAP.md` (REWRITTEN — was printing-press phase plan, now civic reporting phase plan)
-- `HANDOVER.md` (this file — reset to reflect the new project; previous content described completed printing-press ERP work and no longer applies)
-- `README.md` (not yet updated — still generic placeholder text, should be filled in during Phase 1)
+4. **Gemini AI Service Fix**:
+   - **Root Cause**: `server/lib/geminiClient.js` and `server/.env` specified `GEMINI_MODEL=gemini-2.5-flash-lite`, an invalid model identifier that caused Google's API to return HTTP 404 (Not Found).
+   - **Fix**: Updated `GEMINI_MODEL` default to `gemini-2.5-flash` in `server/lib/geminiClient.js` and `server/.env`.
+   - Verified graceful fallback logic in `ReportSubmissionPage.jsx` so manual report submission works even if AI analysis fails.
 
----
+5. **Debug Log Cleanup**:
+   - Removed temporary `console.log('[AppHeader DEBUG] ...')` statements from `src/components/layout/AppHeader.jsx`.
 
-## Database Changes & SQL Migrations
-None executed yet. No migrations exist in this repository. DATABASE.md section 16 defines the recommended migration order:
-1. base tables (users, issue_reports)
-2. supporting tables (report_status_history, report_likes, report_comments)
-3. triggers (status history sync, like/comment count caches)
-4. RLS policies
-5. reporting views (Phase 3, later)
+## Files Modified
+1. `src/app/theme/theme.js` — Added explicit `default`, `error`, `warning`, `info`, `success` palette definitions in `createTheme`.
+2. `src/features/reportDetail/ReportDetailPage.jsx` — Updated Button `color` from `'default'` to `'inherit'`.
+3. `src/features/feed/components/ReportCard.jsx` — Updated IconButton `color` from `'default'` to `'inherit'`.
+4. `server/lib/geminiClient.js` — Updated `GEMINI_MODEL` default fallback from `gemini-2.5-flash-lite` to `gemini-2.5-flash`.
+5. `server/.env` — Updated `GEMINI_MODEL` to `gemini-2.5-flash`.
+6. `src/components/layout/AppHeader.jsx` — Removed `[AppHeader DEBUG]` console log statements.
 
----
+## Database Changes / SQL Migrations
+- None required.
 
 ## APIs Changed
-None implemented yet. Planned first API surfaces (Phase 1):
-- Supabase feature api.js modules for: reports (create/list/get), likes (toggle), comments (create/list)
-- Express endpoint: `POST /api/analyze-report` — accepts a photo (or storage reference), returns suggested title/description/category
+- `server/lib/geminiClient.js`: `GEMINI_MODEL` updated to `gemini-2.5-flash`.
 
----
+## Remaining TODOs
+- Run `npm run build` to verify clean build output.
 
-## Components Added
-None implemented yet. Planned first components (Phase 1):
-- `ReportSubmissionFlow` (capture → geolocation → AI auto-fill review → submit)
-- `FeedList` / `ReportCard`
-- `ReportDetailView`
-- `StatusChip`
-- `PhotoCaptureField`
-
----
-
-## Remaining TODOs (Priority Order)
-1. Decide and document Express server hosting (Render/Railway/Fly.io/other).
-2. Set up Supabase project, environment variables, and initial `users` table with role column.
-3. Write and execute the Phase 1 migrations (issue_reports, report_likes, report_comments + triggers + RLS).
-4. Scaffold the Express server with the single `/api/analyze-report` endpoint and choose the AI vision provider/model.
-5. Build the citizen report submission flow end-to-end.
-6. Build the public feed with like/comment.
-7. Fill in `README.md` with real project description, setup, and run instructions.
-
----
-
-## Known Risks
-- The AI auto-fill provider/model has not been finalized — endpoint contract in ARCHITECTURE.md/DATABASE.md may need adjustment once chosen (e.g. response shape, latency, cost per call).
-- Express hosting is undecided; until resolved, local development should treat the AI endpoint as mockable so frontend work isn't blocked.
-- No RLS policies exist yet — do not treat any table as access-controlled until Phase 1 RLS work is complete.
-
----
-
-## Exact Next Task for Following Agent
-Begin Phase 1: set up the Supabase project and write the first migration for `users` and `issue_reports` (see DATABASE.md sections 4 and 16), then present the SQL migration to the user per the Database-First Rule in AGENTS.md before writing any API or UI code.
+## Exact Next Task
+- Run `npm run build` or continue with Phase 2 official dashboard development.
