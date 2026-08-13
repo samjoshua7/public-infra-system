@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Box, CircularProgress } from '@mui/material';
 
-export const RoleGuard = ({ allowedRoles = [], children }) => {
+export const RoleGuard = ({ allowedRoles = null, excludedRoles = [], children }) => {
   const { isAuthenticated, role, loading } = useAuth();
   const location = useLocation();
 
@@ -26,8 +26,12 @@ export const RoleGuard = ({ allowedRoles = [], children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!allowedRoles.includes(role)) {
-    return <Navigate to="/feed" replace />;
+  const isExcluded = excludedRoles.length > 0 && excludedRoles.includes(role);
+  const isNotAllowed = allowedRoles !== null && !allowedRoles.includes(role);
+
+  if (isExcluded || isNotAllowed) {
+    const fallback = role === 'GOVERNMENT_OFFICIAL' ? '/dashboard' : '/feed';
+    return <Navigate to={fallback} replace />;
   }
 
   return children;

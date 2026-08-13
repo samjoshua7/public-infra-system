@@ -1,20 +1,25 @@
 import { createTheme } from '@mui/material/styles';
 
 export const statusColors = {
-  posted: {
+  ordered: {
     light: { main: '#475569', bg: '#F1F5F9', text: '#334155' },
     dark: { main: '#94A3B8', bg: '#1E293B', text: '#E2E8F0' },
-    label: 'Reported',
+    label: 'Ordered',
   },
-  action_taken: {
+  budget_allocated: {
+    light: { main: '#2563EB', bg: '#EFF6FF', text: '#1E40AF' },
+    dark: { main: '#60A5FA', bg: '#1E3A8A', text: '#BFDBFE' },
+    label: 'Budget Allocated',
+  },
+  on_process: {
     light: { main: '#D97706', bg: '#FEF3C7', text: '#92400E' },
     dark: { main: '#FBBF24', bg: '#451A03', text: '#FDE68A' },
-    label: 'In Progress',
+    label: 'On Process',
   },
-  fixed: {
+  finished: {
     light: { main: '#16A34A', bg: '#DCFCE7', text: '#166534' },
     dark: { main: '#4ADE80', bg: '#064E3B', text: '#BBF7D0' },
-    label: 'Resolved',
+    label: 'Finished',
   },
 };
 

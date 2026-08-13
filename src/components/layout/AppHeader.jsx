@@ -67,7 +67,7 @@ export const AppHeader = () => {
           {/* Logo & Brand */}
           <Box
             component={RouterLink}
-            to="/feed"
+            to={role === 'GOVERNMENT_OFFICIAL' ? '/dashboard' : '/feed'}
             sx={{
               display: 'flex',
               alignItems: 'center',
@@ -98,18 +98,20 @@ export const AppHeader = () => {
 
           {/* Navigation Links */}
           <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, alignItems: 'center' }}>
-            <Button
-              component={RouterLink}
-              to="/feed"
-              startIcon={<DynamicFeedIcon />}
-              color={location.pathname === '/feed' || location.pathname === '/' ? 'primary' : 'inherit'}
-              size="small"
-              sx={{ fontWeight: 600 }}
-            >
-              Public Feed
-            </Button>
+            {role !== 'GOVERNMENT_OFFICIAL' && (
+              <Button
+                component={RouterLink}
+                to="/feed"
+                startIcon={<DynamicFeedIcon />}
+                color={location.pathname === '/feed' || location.pathname === '/' ? 'primary' : 'inherit'}
+                size="small"
+                sx={{ fontWeight: 600 }}
+              >
+                Public Feed
+              </Button>
+            )}
 
-            {isAuthenticated && (
+            {isAuthenticated && role !== 'GOVERNMENT_OFFICIAL' && (
               <Button
                 component={RouterLink}
                 to="/report/new"

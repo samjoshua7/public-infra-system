@@ -11,9 +11,16 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BuildIcon from '@mui/icons-material/Build';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { updateReportStatus } from '../api';
 import { usePermissions } from '../../../hooks/usePermissions';
+import {
+  STATUS_LABELS,
+  STATUS_COLORS,
+  getNextStatus,
+  getNextStatusLabel,
+} from '../../../lib/reportStatus';
 
 export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }) => {
   const { canUpdateStatus } = usePermissions();
@@ -24,32 +31,35 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
 
   if (!canUpdateStatus) return null;
 
-  let nextStatus = null;
-  let actionLabel = '';
-  let buttonIcon = null;
+  const nextStatus = getNextStatus(currentStatus);
+  const nextStatusLabel = getNextStatusLabel(currentStatus);
+  const currentStatusLabel = STATUS_LABELS[currentStatus] || currentStatus;
+
+  let buttonIcon = <TaskAltIcon />;
   let buttonColor = 'primary';
 
-  if (currentStatus === 'posted') {
-    nextStatus = 'action_taken';
-    actionLabel = 'Mark Action Taken';
+  if (nextStatus === 'budget_allocated') {
+    buttonIcon = <AccountBalanceIcon />;
+    buttonColor = 'info';
+  } else if (nextStatus === 'on_process') {
     buttonIcon = <BuildIcon />;
     buttonColor = 'warning';
-  } else if (currentStatus === 'action_taken') {
-    nextStatus = 'fixed';
-    actionLabel = 'Mark Fixed';
+  } else if (nextStatus === 'finished') {
     buttonIcon = <CheckCircleIcon />;
     buttonColor = 'success';
   }
 
+  const isCommentEmpty = note.trim().length === 0;
+
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (!nextStatus || !reportId) return;
+    if (!nextStatus || !reportId || isCommentEmpty) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      await updateReportStatus(reportId, nextStatus, note);
+      await updateReportStatus(reportId, nextStatus, note.trim());
       setNote('');
       if (onStatusUpdated) {
         onStatusUpdated();
@@ -94,25 +104,30 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
         </Alert>
       )}
 
-      {currentStatus === 'fixed' ? (
+      {currentStatus === 'finished' ? (
         <Alert severity="success" icon={<CheckCircleIcon />}>
-          This report is marked as <strong>Fixed</strong>. The status pipeline is complete.
+          This report is marked as <strong>Finished</strong>. The status pipeline is complete.
         </Alert>
       ) : (
         <Box component="form" onSubmit={handleUpdate}>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Advance status from <strong>{currentStatus.replace('_', ' ')}</strong> to{' '}
-            <strong>{nextStatus.replace('_', ' ')}</strong>:
+            Advance status from <strong>{currentStatusLabel}</strong> to{' '}
+            <strong>{nextStatusLabel}</strong>:
           </Typography>
 
           <TextField
             fullWidth
+            multiline
+            rows={2}
             size="small"
-            label="Audit Note (Optional)"
-            placeholder="e.g. Work order issued, crew assigned, or repair completed..."
+            label="Comment (required)"
+            placeholder="e.g. Work order created, budget approved, crew assigned, or repair verified..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={submitting}
+            required
+            error={note.length > 0 && isCommentEmpty}
+            helperText={isCommentEmpty ? 'A comment is required to update the report status.' : ''}
             sx={{ mb: 2 }}
           />
 
@@ -121,10 +136,10 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
             variant="contained"
             color={buttonColor}
             startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : buttonIcon}
-            disabled={submitting}
+            disabled={submitting || isCommentEmpty}
             sx={{ fontWeight: 700 }}
           >
-            {submitting ? 'Updating...' : actionLabel}
+            {submitting ? 'Updating...' : `Move to ${nextStatusLabel}`}
           </Button>
         </Box>
       )}

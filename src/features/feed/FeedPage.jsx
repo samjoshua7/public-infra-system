@@ -22,6 +22,7 @@ import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 import { useAuth } from '../../hooks/useAuth';
+import { STATUS_ORDER, STATUS_LABELS } from '../../lib/reportStatus';
 
 export const FeedPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -170,9 +171,11 @@ export const FeedPage = () => {
               }}
             >
               <MenuItem value="all">All Statuses</MenuItem>
-              <MenuItem value="posted">Reported</MenuItem>
-              <MenuItem value="action_taken">In Progress</MenuItem>
-              <MenuItem value="fixed">Resolved</MenuItem>
+              {STATUS_ORDER.map((st) => (
+                <MenuItem key={st} value={st}>
+                  {STATUS_LABELS[st]}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 

@@ -20,7 +20,14 @@ export const AppRoutes = () => {
     <AppShell>
       <Routes>
         <Route path="/" element={<Navigate to="/feed" replace />} />
-        <Route path="/feed" element={<FeedPage />} />
+        <Route
+          path="/feed"
+          element={
+            <RoleGuard excludedRoles={['GOVERNMENT_OFFICIAL']}>
+              <FeedPage />
+            </RoleGuard>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/waiting-approval" element={<WaitingApprovalPage />} />
@@ -28,9 +35,11 @@ export const AppRoutes = () => {
           path="/report/new"
           element={
             <ProtectedRoute>
-              <ApprovalGuard>
-                <ReportSubmissionPage />
-              </ApprovalGuard>
+              <RoleGuard excludedRoles={['GOVERNMENT_OFFICIAL']}>
+                <ApprovalGuard>
+                  <ReportSubmissionPage />
+                </ApprovalGuard>
+              </RoleGuard>
             </ProtectedRoute>
           }
         />

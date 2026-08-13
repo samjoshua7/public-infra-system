@@ -57,7 +57,7 @@ export const listReportsForOfficial = async ({
 
 /**
  * Update report status using authoritative Supabase RPC update_report_status.
- * Enforces forward-only transitions (posted -> action_taken -> fixed) and role permissions in DB.
+ * Enforces forward-only transitions (ordered -> budget_allocated -> on_process -> finished) and role permissions in DB.
  */
 export const updateReportStatus = async (reportId, newStatus, note = '') => {
   const { data, error } = await supabase.rpc('update_report_status', {

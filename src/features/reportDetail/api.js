@@ -50,10 +50,10 @@ export const listReportComments = async (reportId) => {
 };
 
 /**
- * Edit a report's own fields. Only works while status is still 'posted' —
- * enforced server-side by the enforce_report_edit_rules() trigger (002
+ * Edit a report's own fields. Only works while status is still 'ordered' —
+ * enforced server-side by the enforce_report_edit_rules() trigger (005
  * migration), so this will throw if the report has already moved past
- * 'posted' or if the caller isn't the owner/an admin.
+ * 'ordered' or if the caller isn't the owner/an admin.
  */
 export const updateReportDetails = async (reportId, { title, description, category }) => {
   const { data, error } = await supabase
@@ -84,8 +84,8 @@ export const setReportHidden = async (reportId, isHidden) => {
 };
 
 /**
- * Delete a report outright. Only allowed while status is still 'posted'
- * (owner), or any time (admin) — enforced by RLS in the 002 migration.
+ * Delete a report outright. Only allowed while status is still 'ordered'
+ * (owner), or any time (admin) — enforced by RLS in the 005 migration.
  */
 export const deleteReport = async (reportId) => {
   const { error } = await supabase.from('issue_reports').delete().eq('report_id', reportId);

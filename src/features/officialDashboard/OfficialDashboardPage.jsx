@@ -14,22 +14,30 @@ import {
   TableSortLabel,
   Chip,
   Button,
+  IconButton,
   Pagination,
   Avatar,
   Tooltip,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 import { listReportsForOfficial } from './api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
-import { useThemeMode } from '../../app/providers/ThemeModeProvider';
-import { statusColors } from '../../app/theme/theme';
+import {
+  STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+  getNextStatus,
+  getNextStatusLabel,
+} from '../../lib/reportStatus';
+import { ReportDetailDialog } from './components/ReportDetailDialog';
+import { QuickAdvanceDialog } from './components/QuickAdvanceDialog';
 
 const categoryLabels = {
   pothole: 'Pothole',
@@ -40,8 +48,6 @@ const categoryLabels = {
 };
 
 export const OfficialDashboardPage = () => {
-  const { mode } = useThemeMode();
-
   const [reports, setReports] = useState([]);
   const [statusTab, setStatusTab] = useState('all');
   const [page, setPage] = useState(1);
@@ -55,6 +61,10 @@ export const OfficialDashboardPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Dialog states
+  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [quickAdvanceReport, setQuickAdvanceReport] = useState(null);
 
   const loadOfficialReports = useCallback(async () => {
     setLoading(true);
@@ -134,9 +144,14 @@ export const OfficialDashboardPage = () => {
           scrollButtons="auto"
         >
           <Tab label="All Reports" value="all" sx={{ fontWeight: 600 }} />
-          <Tab label="Reported (Posted)" value="posted" sx={{ fontWeight: 600 }} />
-          <Tab label="In Progress (Action Taken)" value="action_taken" sx={{ fontWeight: 600 }} />
-          <Tab label="Resolved (Fixed)" value="fixed" sx={{ fontWeight: 600 }} />
+          {STATUS_ORDER.map((st) => (
+            <Tab
+              key={st}
+              label={STATUS_LABELS[st]}
+              value={st}
+              sx={{ fontWeight: 600 }}
+            />
+          ))}
         </Tabs>
       </Paper>
 
@@ -148,17 +163,27 @@ export const OfficialDashboardPage = () => {
       ) : reports.length === 0 ? (
         <EmptyState
           title="No Reports Found"
-          description={`There are currently no reports with status "${statusTab.replace('_', ' ')}".`}
+          description={`There are currently no reports with status "${STATUS_LABELS[statusTab] || statusTab}".`}
           actionText="Refresh Dashboard"
           onAction={loadOfficialReports}
         />
       ) : (
         <>
           <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-            <Table sx={{ minWidth: 750 }} aria-label="official reports table">
+            <Table size="small" sx={{ minWidth: 750 }} aria-label="official reports table">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableSortLabel
+                      active={sortBy === 'created_at'}
+                      direction={sortBy === 'created_at' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('created_at')}
+                    >
+                      Date Reported
+                    </TableSortLabel>
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
                     <TableSortLabel
                       active={sortBy === 'title'}
                       direction={sortBy === 'title' ? sortOrder : 'asc'}
@@ -168,7 +193,9 @@ export const OfficialDashboardPage = () => {
                     </TableSortLabel>
                   </TableCell>
 
-                  <TableCell sx={{ fontWeight: 700 }}>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Location</TableCell>
+
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
                     <TableSortLabel
                       active={sortBy === 'category'}
                       direction={sortBy === 'category' ? sortOrder : 'asc'}
@@ -178,29 +205,7 @@ export const OfficialDashboardPage = () => {
                     </TableSortLabel>
                   </TableCell>
 
-                  <TableCell sx={{ fontWeight: 700 }}>Reporter</TableCell>
-
-                  <TableCell sx={{ fontWeight: 700 }}>
-                    <TableSortLabel
-                      active={sortBy === 'created_at'}
-                      direction={sortBy === 'created_at' ? sortOrder : 'asc'}
-                      onClick={() => handleSortRequest('created_at')}
-                    >
-                      Submitted
-                    </TableSortLabel>
-                  </TableCell>
-
-                  <TableCell sx={{ fontWeight: 700 }}>
-                    <TableSortLabel
-                      active={sortBy === 'like_count'}
-                      direction={sortBy === 'like_count' ? sortOrder : 'asc'}
-                      onClick={() => handleSortRequest('like_count')}
-                    >
-                      Importance (Likes)
-                    </TableSortLabel>
-                  </TableCell>
-
-                  <TableCell sx={{ fontWeight: 700 }}>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
                     <TableSortLabel
                       active={sortBy === 'status'}
                       direction={sortBy === 'status' ? sortOrder : 'asc'}
@@ -210,116 +215,134 @@ export const OfficialDashboardPage = () => {
                     </TableSortLabel>
                   </TableCell>
 
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>
-                    Action
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableSortLabel
+                      active={sortBy === 'like_count'}
+                      direction={sortBy === 'like_count' ? sortOrder : 'asc'}
+                      onClick={() => handleSortRequest('like_count')}
+                    >
+                      Likes
+                    </TableSortLabel>
+                  </TableCell>
+
+                  <TableCell align="right" sx={{ fontWeight: 700, py: 1.5 }}>
+                    Actions
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {reports.map((r) => {
-                  const statusConfig = statusColors[r.status] || statusColors.posted;
-                  const statusStyle = statusConfig[mode] || statusConfig.light;
+                  const nextStatus = getNextStatus(r.status);
+                  const nextStatusLabel = getNextStatusLabel(r.status);
 
                   return (
-                    <TableRow key={r.report_id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box
-                            component="img"
-                            src={r.photo_url}
-                            alt={r.title}
-                            sx={{
-                              width: 56,
-                              height: 56,
-                              borderRadius: 1.5,
-                              objectFit: 'cover',
-                              flexShrink: 0,
-                            }}
-                          />
-                          <Box sx={{ minWidth: 0 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="subtitle2" fontWeight="700" noWrap>
-                                {r.title}
-                              </Typography>
-                              {r.is_hidden && (
-                                <Tooltip title="Hidden from public feed">
-                                  <Chip
-                                    icon={<VisibilityOffOutlinedIcon fontSize="small" />}
-                                    label="Hidden"
-                                    size="small"
-                                    color="warning"
-                                    variant="outlined"
-                                    sx={{ height: 20, fontSize: '0.65rem' }}
-                                  />
-                                </Tooltip>
-                              )}
-                            </Box>
-                            <Typography variant="caption" color="text.secondary" noWrap display="block">
-                              {r.description}
-                            </Typography>
-                          </Box>
+                    <TableRow
+                      key={r.report_id}
+                      hover
+                      onClick={() => setSelectedReportId(r.report_id)}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      {/* 1. Date Reported */}
+                      <TableCell sx={{ py: 1, whiteSpace: 'nowrap' }}>
+                        <Typography variant="body2" color="text.secondary" fontWeight="500">
+                          {formatDate(r.created_at)}
+                        </Typography>
+                      </TableCell>
+
+                      {/* 2. Report Title */}
+                      <TableCell sx={{ py: 1, maxWidth: 280 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" fontWeight="600" noWrap>
+                            {r.title}
+                          </Typography>
+                          {r.is_hidden && (
+                            <Tooltip title="Hidden from public feed">
+                              <Chip
+                                icon={<VisibilityOffOutlinedIcon fontSize="small" />}
+                                label="Hidden"
+                                size="small"
+                                color="warning"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: '0.6rem' }}
+                              />
+                            </Tooltip>
+                          )}
                         </Box>
                       </TableCell>
 
-                      <TableCell>
+                      {/* 3. Location */}
+                      <TableCell sx={{ py: 1, whiteSpace: 'nowrap' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {r.latitude != null && r.longitude != null
+                            ? `${r.latitude.toFixed(3)}, ${r.longitude.toFixed(3)}`
+                            : 'N/A'}
+                        </Typography>
+                      </TableCell>
+
+                      {/* 4. Category */}
+                      <TableCell sx={{ py: 1 }}>
                         <Chip
                           label={categoryLabels[r.category] || r.category}
                           size="small"
                           color="primary"
                           variant="outlined"
-                          sx={{ fontWeight: 600 }}
+                          sx={{ fontWeight: 600, height: 24 }}
                         />
                       </TableCell>
 
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="600">
-                          {r.users?.name || 'Citizen'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {r.users?.email || ''}
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography variant="body2">{formatDate(r.created_at)}</Typography>
-                      </TableCell>
-
-                      {/* Citizen Importance Signal (Likes) */}
-                      <TableCell>
+                      {/* 5. Status */}
+                      <TableCell sx={{ py: 1 }}>
                         <Chip
-                          icon={<FavoriteIcon fontSize="small" color="error" />}
-                          label={`${r.like_count || 0} ${r.like_count === 1 ? 'like' : 'likes'}`}
+                          label={STATUS_LABELS[r.status] || r.status}
+                          color={STATUS_COLORS[r.status] || 'default'}
                           size="small"
-                          variant="outlined"
-                          color={r.like_count > 5 ? 'error' : 'default'}
-                          sx={{ fontWeight: 700 }}
+                          sx={{ fontWeight: 700, height: 24 }}
                         />
                       </TableCell>
 
-                      <TableCell>
-                        <Chip
-                          label={statusConfig.label}
-                          size="small"
-                          sx={{
-                            backgroundColor: statusStyle.bg,
-                            color: statusStyle.text,
-                            fontWeight: 700,
-                            border: `1px solid ${statusStyle.main}`,
-                          }}
-                        />
+                      {/* 6. Likes (Compact inline format) */}
+                      <TableCell sx={{ py: 1, whiteSpace: 'nowrap' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />
+                          <Typography variant="body2" fontWeight="700">
+                            {r.like_count || 0}
+                          </Typography>
+                        </Box>
                       </TableCell>
 
-                      <TableCell align="right">
-                        <Button
-                          component={RouterLink}
-                          to={`/report/${r.report_id}`}
-                          variant="outlined"
-                          size="small"
-                          endIcon={<OpenInNewIcon fontSize="small" />}
-                          sx={{ fontWeight: 600 }}
-                        >
-                          Review
-                        </Button>
+                      {/* 7. Actions */}
+                      <TableCell align="right" sx={{ py: 1 }} onClick={(e) => e.stopPropagation()}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                          {r.status !== 'finished' && (
+                            <Tooltip title={`Advance to ${nextStatusLabel}`}>
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color={STATUS_COLORS[nextStatus] || 'primary'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQuickAdvanceReport(r);
+                                  }}
+                                >
+                                  <ArrowForwardIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          )}
+
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedReportId(r.report_id);
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   );
@@ -342,6 +365,21 @@ export const OfficialDashboardPage = () => {
           )}
         </>
       )}
+
+      {/* Report Detail Dialog Popup */}
+      <ReportDetailDialog
+        reportId={selectedReportId}
+        onClose={() => setSelectedReportId(null)}
+        onStatusUpdated={loadOfficialReports}
+      />
+
+      {/* Quick Advance Dialog Popup */}
+      <QuickAdvanceDialog
+        report={quickAdvanceReport}
+        open={Boolean(quickAdvanceReport)}
+        onClose={() => setQuickAdvanceReport(null)}
+        onStatusUpdated={loadOfficialReports}
+      />
     </Box>
   );
 };

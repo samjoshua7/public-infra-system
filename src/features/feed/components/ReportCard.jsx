@@ -50,14 +50,14 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hiding, setHiding] = useState(false);
 
-  const statusConfig = statusColors[report.status] || statusColors.posted;
+  const statusConfig = statusColors[report.status] || statusColors.ordered;
   const statusStyle = statusConfig[mode] || statusConfig.light;
 
   const isOwner = user && report.reporter_id === user.id;
   const isAdmin = role === 'ADMIN';
   const canManage = isOwner || isAdmin;
 
-  const canEditOrDelete = report.status === 'posted' || isAdmin;
+  const canEditOrDelete = report.status === 'ordered' || isAdmin;
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
