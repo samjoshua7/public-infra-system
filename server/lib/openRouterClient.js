@@ -51,8 +51,8 @@ Category MUST be exactly one of: "pothole", "streetlight", "traffic_light", "gar
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://civicspeak.local',
-      'X-Title': 'CivicSpeak',
+      'HTTP-Referer': 'https://civicvoice.local',
+      'X-Title': 'Civic Voice',
     },
     body: JSON.stringify(payload),
   });

@@ -7,6 +7,9 @@ import { RoleGuard } from './guards/RoleGuard';
 import { ApprovalGuard } from './guards/ApprovalGuard';
 
 import { FeedPage } from '../features/feed/FeedPage';
+import { ExplorePage } from '../features/explore/ExplorePage';
+import { ProfilePage } from '../features/profile/ProfilePage';
+import { NotificationsPage } from '../features/notifications/NotificationsPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { SignupPage } from '../features/auth/SignupPage';
 import { WaitingApprovalPage } from '../features/auth/WaitingApprovalPage';
@@ -26,6 +29,24 @@ export const AppRoutes = () => {
             <RoleGuard excludedRoles={['GOVERNMENT_OFFICIAL']}>
               <FeedPage />
             </RoleGuard>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <RoleGuard excludedRoles={['GOVERNMENT_OFFICIAL']}>
+              <ExplorePage />
+            </RoleGuard>
+          }
+        />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
           }
         />
         <Route path="/login" element={<LoginPage />} />

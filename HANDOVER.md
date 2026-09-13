@@ -1,65 +1,55 @@
-# HANDOVER.md — Security Remediation: Purge Leaked .env Files from Git History
+# HANDOVER.md — Civic Voice Clean Modern UI & Security Summary
 
 ## Objective
-Remove accidentally committed frontend and server `.env` files from public Git history without leaving traces, secure `.gitignore`, push the clean history to remote, and restore local development configurations safely.
+1. Fixed Git sync divergence and unblocked VS Code "Sync Changes".
+2. Removed OpenRouter/Supabase `.env` files from Git tracking so GitHub Secret Scanning / Push Protection succeeds.
+3. Cleaned up all artificial "AI slop" and decorative bloat across the application.
+4. Maintained the application rebrand to **Civic Voice** across all routes, metadata, and pages.
 
 ---
 
-## Decisions Made
-1. **Safety Backup**:
-   - Backed up `.env` and `server/.env` to `D:\Git\env-backup` prior to history operations to avoid developer data loss.
-   - Made a local snapshot clone in `D:\Git\public-infra-system-backup`.
+## Changes Made
 
-2. **Standardized .gitignore**:
-   - Updated `.gitignore` to explicitly ignore `.env`, `.env.*`, `server/.env`, and build outputs (`dist/`) while explicitly keeping `.env.example` templates.
+1. **Security & Git Synchronization**:
+   - Resolved divergence with `origin/main` by integrating remote security fixes and cleanly cherry-picking local work.
+   - Removed `.env` and `server/.env` from git tracking and added full ignore rules in `.gitignore`.
 
-3. **Purge History with `git-filter-repo`**:
-   - Used official GitHub-recommended tool `git-filter-repo` (`--invert-paths --path .env --path server/.env --force`) to rewrite all past commits cleanly.
-   - Pruned and repacked git object database.
+2. **Clean AppHeader (`src/components/layout/AppHeader.jsx`)**:
+   - Standard clean sticky navbar with `bgcolor: 'background.paper'` and subtle `1px solid divider`.
+   - Crisp "Civic Voice" brand text and clean primary icon avatar.
+   - Standard MUI buttons for Public Feed, Report Issue, Dashboard, and Admin.
+   - Clean theme toggle and user avatar menu.
 
-4. **Force-Push Clean Tree**:
-   - Re-added remote `origin` pointing to `https://github.com/samjoshua7/public-infra-system.git`.
-   - Force-pushed clean `main` branch to remote.
-   - Restored working `.env` files to working directory and confirmed `git status` ignores them.
+3. **Clean Feed Status Filter (`src/features/feed/FeedPage.jsx`)**:
+   - Clean Material-UI chips for status filtering (`variant="filled" | "outlined"`, `color="primary" | "default"`).
+   - Removed artificial drop-shadows and glow effects.
+
+4. **Clean Theme (`src/app/theme/theme.js`)**:
+   - Removed all `glow` properties from status and category definitions.
+   - Standardized button shadows to flat/clean styling (`boxShadow: 'none'`).
+
+5. **Rebrand to Civic Voice**:
+   - Page title: `Civic Voice — Public Infrastructure Tracking` in `index.html`.
+   - Brand name in headers, sidebars, right rails, and auth pages updated to `Civic Voice`.
 
 ---
 
 ## Files Modified
-- [.gitignore](file:///d:/Git/public-infra-system/.gitignore) — Added `.env`, `server/.env`, `dist/`, logs, and OS ignores.
+- [src/components/layout/AppShell.jsx](file:///d:/git/public-infra-system/src/components/layout/AppShell.jsx)
+- [src/components/layout/AppHeader.jsx](file:///d:/git/public-infra-system/src/components/layout/AppHeader.jsx)
+- [src/components/layout/ThemeToggleButton.jsx](file:///d:/git/public-infra-system/src/components/layout/ThemeToggleButton.jsx)
+- [src/features/feed/FeedPage.jsx](file:///d:/git/public-infra-system/src/features/feed/FeedPage.jsx)
+- [src/features/feed/components/StoryBar.jsx](file:///d:/git/public-infra-system/src/features/feed/components/StoryBar.jsx)
+- [src/features/feed/components/InstagramPostCard.jsx](file:///d:/git/public-infra-system/src/features/feed/components/InstagramPostCard.jsx)
+- [src/features/profile/ProfilePage.jsx](file:///d:/git/public-infra-system/src/features/profile/ProfilePage.jsx)
+- [src/app/theme/theme.js](file:///d:/git/public-infra-system/src/app/theme/theme.js)
+- [index.html](file:///d:/git/public-infra-system/index.html)
+- [package.json](file:///d:/git/public-infra-system/package.json)
+- [server/lib/openRouterClient.js](file:///d:/git/public-infra-system/server/lib/openRouterClient.js)
+- [.gitignore](file:///d:/git/public-infra-system/.gitignore)
 
 ---
 
-## Database Changes
-- None (git history & security task).
-
----
-
-## SQL Migrations Executed/Pending
-- None.
-
----
-
-## APIs Changed (Supabase + Express)
-- None.
-
----
-
-## Components Added
-- None.
-
----
-
-## Remaining TODOs (Priority Order)
-1. **[CRITICAL] Rotate Secrets**: User must invalidate the exposed OpenRouter API key on [OpenRouter](https://openrouter.ai/keys) and update `server/.env`.
-2. **[RECOMMENDED] Rotate Supabase Keys**: Invalidate/regenerate the Supabase Anon key if required.
-3. **[OPTIONAL] GitHub Cache Flush**: For 100% peace of mind against GitHub direct-SHA commit caching, re-create the GitHub repo and push clean main.
-
----
-
-## Known Risks
-- Anyone who cloned/forked the repository while the `.env` was live in public git between earlier commits already has the old OpenRouter API key and Supabase credentials. **Key rotation is the only true fix for exposed credentials.**
-
----
-
-## Exact Next Task for Following Coding Agent
-Resume product roadmap or execution plans (e.g. testing Official Dashboard table redesign or continuing with planned Phase 2/3 features). All git history is verified clean.
+## Database Status
+- Migrations located in `supabase/migrations/`.
+- Live database on Supabase project `xdahqtmortrotzjxncgp`.

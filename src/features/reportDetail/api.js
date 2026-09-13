@@ -92,14 +92,15 @@ export const deleteReport = async (reportId) => {
   if (error) throw error;
 };
 
-export const addReportComment = async ({ reportId, userId, body }) => {
+export const addReportComment = async ({ reportId, userId, body, content }) => {
+  const commentText = body || content;
   const { data, error } = await supabase
     .from('report_comments')
     .insert([
       {
         report_id: reportId,
         user_id: userId,
-        body,
+        body: commentText,
       },
     ])
     .select(

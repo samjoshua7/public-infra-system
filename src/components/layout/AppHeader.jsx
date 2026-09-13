@@ -15,11 +15,12 @@ import {
 } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { useAuth } from '../../hooks/useAuth';
 import { signOut } from '../../features/auth/api';
@@ -61,9 +62,18 @@ export const AppHeader = () => {
   const canAccessAdmin = role === 'ADMIN';
 
   return (
-    <AppBar position="sticky" color="default" elevation={0}>
+    <AppBar
+      position="sticky"
+      color="default"
+      elevation={0}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        zIndex: 1100,
+      }}
+    >
       <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ minHeight: 64, gap: 2 }}>
+        <Toolbar disableGutters sx={{ minHeight: 64, height: 64, gap: 2 }}>
           {/* Logo & Brand */}
           <Box
             component={RouterLink}
@@ -71,7 +81,7 @@ export const AppHeader = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
+              gap: 1.25,
               textDecoration: 'none',
               color: 'inherit',
               mr: 2,
@@ -80,9 +90,10 @@ export const AppHeader = () => {
             <Avatar
               sx={{
                 bgcolor: 'primary.main',
-                color: 'primary.contrastText',
+                color: '#FFFFFF',
                 width: 36,
                 height: 36,
+                borderRadius: 2,
               }}
             >
               <LocationCityIcon fontSize="small" />
@@ -90,9 +101,14 @@ export const AppHeader = () => {
             <Typography
               variant="h6"
               component="span"
-              sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
+              sx={{
+                fontWeight: 800,
+                fontSize: '1.25rem',
+                letterSpacing: '-0.02em',
+                color: 'text.primary',
+              }}
             >
-              CivicSpeak
+              Civic Voice
             </Typography>
           </Box>
 
@@ -102,10 +118,14 @@ export const AppHeader = () => {
               <Button
                 component={RouterLink}
                 to="/feed"
-                startIcon={<DynamicFeedIcon />}
+                startIcon={<DynamicFeedIcon sx={{ fontSize: 19 }} />}
                 color={location.pathname === '/feed' || location.pathname === '/' ? 'primary' : 'inherit'}
                 size="small"
-                sx={{ fontWeight: 600 }}
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 2,
+                }}
               >
                 Public Feed
               </Button>
@@ -115,11 +135,15 @@ export const AppHeader = () => {
               <Button
                 component={RouterLink}
                 to="/report/new"
-                startIcon={<AddCircleOutlineIcon />}
+                startIcon={<AddCircleIcon sx={{ fontSize: 19 }} />}
                 variant="contained"
                 color="primary"
                 size="small"
-                sx={{ fontWeight: 600 }}
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 2,
+                }}
               >
                 Report Issue
               </Button>
@@ -129,10 +153,15 @@ export const AppHeader = () => {
               <Button
                 component={RouterLink}
                 to="/dashboard"
-                startIcon={<DashboardIcon />}
+                startIcon={<DashboardIcon sx={{ fontSize: 19 }} />}
                 color={location.pathname === '/dashboard' ? 'warning' : 'inherit'}
                 size="small"
-                sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }}
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 2,
+                  display: { xs: 'none', md: 'inline-flex' },
+                }}
               >
                 Official Dashboard
               </Button>
@@ -142,10 +171,15 @@ export const AppHeader = () => {
               <Button
                 component={RouterLink}
                 to="/admin"
-                startIcon={<AdminPanelSettingsIcon />}
+                startIcon={<AdminPanelSettingsIcon sx={{ fontSize: 19 }} />}
                 color={location.pathname === '/admin' ? 'error' : 'inherit'}
                 size="small"
-                sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }}
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 2,
+                  display: { xs: 'none', md: 'inline-flex' },
+                }}
               >
                 Admin Panel
               </Button>
@@ -163,9 +197,16 @@ export const AppHeader = () => {
                   color={getRoleColor()}
                   size="small"
                   variant="outlined"
-                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, fontWeight: 600 }}
+                  sx={{
+                    display: { xs: 'none', sm: 'inline-flex' },
+                    fontWeight: 600,
+                  }}
                 />
-                <IconButton onClick={handleMenuOpen} size="small">
+                <IconButton
+                  onClick={handleMenuOpen}
+                  size="small"
+                  aria-label="User profile menu"
+                >
                   <Avatar
                     sx={{
                       width: 34,
@@ -187,22 +228,32 @@ export const AppHeader = () => {
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
                   <Box sx={{ px: 2, py: 1 }}>
-                    <Typography variant="subtitle2" noWrap>
+                    <Typography variant="subtitle2" noWrap fontWeight="700">
                       {profile?.name || 'Citizen'}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
+                    <Typography variant="caption" color="text.secondary" noWrap display="block">
                       {user?.email}
                     </Typography>
                   </Box>
 
                   <Divider />
 
+                  <MenuItem
+                    component={RouterLink}
+                    to="/profile"
+                    onClick={handleMenuClose}
+                    sx={{ gap: 1.25 }}
+                  >
+                    <AccountCircleIcon fontSize="small" color="primary" />
+                    My Profile
+                  </MenuItem>
+
                   {canAccessDashboard && (
                     <MenuItem
                       component={RouterLink}
                       to="/dashboard"
                       onClick={handleMenuClose}
-                      sx={{ gap: 1 }}
+                      sx={{ gap: 1.25 }}
                     >
                       <DashboardIcon fontSize="small" color="warning" />
                       Official Dashboard
@@ -214,16 +265,16 @@ export const AppHeader = () => {
                       component={RouterLink}
                       to="/admin"
                       onClick={handleMenuClose}
-                      sx={{ gap: 1 }}
+                      sx={{ gap: 1.25 }}
                     >
                       <AdminPanelSettingsIcon fontSize="small" color="error" />
                       Admin Panel
                     </MenuItem>
                   )}
 
-                  {(canAccessDashboard || canAccessAdmin) && <Divider />}
+                  <Divider />
 
-                  <MenuItem onClick={handleSignOut} sx={{ color: 'error.main', gap: 1 }}>
+                  <MenuItem onClick={handleSignOut} sx={{ color: 'error.main', gap: 1.25 }}>
                     <LogoutIcon fontSize="small" />
                     Sign Out
                   </MenuItem>
