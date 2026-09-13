@@ -1,52 +1,65 @@
-# HANDOVER.md — EXECUTION_PLAN_07.md: Official Table Redesign (Compact 7-Column Spec & Admin Density)
+# HANDOVER.md — Security Remediation: Purge Leaked .env Files from Git History
 
 ## Objective
-Execute `EXECUTION_PLAN_07.md`: transform the Government Official Dashboard table into a high-density, scannable administrative grid matching an exact 7-column spec, removing card-like visual clutter (photo thumbnails, descriptions, reporter info) while preserving row-click popups and inline status advancement actions.
+Remove accidentally committed frontend and server `.env` files from public Git history without leaving traces, secure `.gitignore`, push the clean history to remote, and restore local development configurations safely.
 
 ---
 
-## Decisions Made & Architecture
+## Decisions Made
+1. **Safety Backup**:
+   - Backed up `.env` and `server/.env` to `D:\Git\env-backup` prior to history operations to avoid developer data loss.
+   - Made a local snapshot clone in `D:\Git\public-infra-system-backup`.
 
-1. **Exact 7-Column Spec**:
-   - Replaced multi-line feed-like rows with 7 compact columns in order:
-     1. **Date Reported** (`created_at` formatted short e.g. `Aug 13, 2026`, sortable)
-     2. **Report Title** (Single line `noWrap` text with ellipsis, sortable — photo and description removed)
-     3. **Location** (`lat.toFixed(3), lng.toFixed(3)` coordinates)
-     4. **Category** (Small category chip, sortable)
-     5. **Status** (`Chip` styled via `STATUS_LABELS`/`STATUS_COLORS`, sortable)
-     6. **Likes** (Compact `❤️ 12` inline text format, sortable)
-     7. **Actions** (Right-aligned icon buttons: `ArrowForwardIcon` for quick advance and `VisibilityIcon` for detail popup)
+2. **Standardized .gitignore**:
+   - Updated `.gitignore` to explicitly ignore `.env`, `.env.*`, `server/.env`, and build outputs (`dist/`) while explicitly keeping `.env.example` templates.
 
-2. **Compact Row Density**:
-   - Applied `size="small"` table formatting and tight vertical cell padding (`py: 1`).
-   - Removed photo thumbnails, inline descriptions, and reporter names/emails from table rows (all available in `ReportDetailDialog`).
-   - Formatted all cell text into single-line `noWrap` typography to maximize rows visible per viewport.
+3. **Purge History with `git-filter-repo`**:
+   - Used official GitHub-recommended tool `git-filter-repo` (`--invert-paths --path .env --path server/.env --force`) to rewrite all past commits cleanly.
+   - Pruned and repacked git object database.
 
-3. **Preserved Action Triggers**:
-   - Row `onClick` opens `ReportDetailDialog` popup.
-   - Action icon buttons use `e.stopPropagation()` so clicking icons does not trigger the row-click popup.
+4. **Force-Push Clean Tree**:
+   - Re-added remote `origin` pointing to `https://github.com/samjoshua7/public-infra-system.git`.
+   - Force-pushed clean `main` branch to remote.
+   - Restored working `.env` files to working directory and confirmed `git status` ignores them.
 
 ---
 
-## Files Modified & Created
-
-### Files Modified
-- [src/features/officialDashboard/OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) — Redesigned table layout to 7 compact columns, tight padding, and icon action triggers.
+## Files Modified
+- [.gitignore](file:///d:/Git/public-infra-system/.gitignore) — Added `.env`, `server/.env`, `dist/`, logs, and OS ignores.
 
 ---
 
-## Verification Steps for User
+## Database Changes
+- None (git history & security task).
 
-1. **Build Verification**:
-   Execute in terminal:
-   ```bash
-   npm run build
-   ```
-2. **Dashboard Density & Layout Testing**:
-   - Log in as a Government Official account and view `/dashboard`.
-   - Confirm table displays 7 compact columns (Date, Title, Location, Category, Status, Likes, Actions).
-   - Confirm photo thumbnails, descriptions, and reporter names are gone from the table grid.
-   - Verify table fits significantly more rows per screen.
-   - Click a row → verify `ReportDetailDialog` opens.
-   - Click **Advance** (arrow icon) → verify `QuickAdvanceDialog` opens independently.
-   - Click **View** (eye icon) → verify `ReportDetailDialog` opens.
+---
+
+## SQL Migrations Executed/Pending
+- None.
+
+---
+
+## APIs Changed (Supabase + Express)
+- None.
+
+---
+
+## Components Added
+- None.
+
+---
+
+## Remaining TODOs (Priority Order)
+1. **[CRITICAL] Rotate Secrets**: User must invalidate the exposed OpenRouter API key on [OpenRouter](https://openrouter.ai/keys) and update `server/.env`.
+2. **[RECOMMENDED] Rotate Supabase Keys**: Invalidate/regenerate the Supabase Anon key if required.
+3. **[OPTIONAL] GitHub Cache Flush**: For 100% peace of mind against GitHub direct-SHA commit caching, re-create the GitHub repo and push clean main.
+
+---
+
+## Known Risks
+- Anyone who cloned/forked the repository while the `.env` was live in public git between earlier commits already has the old OpenRouter API key and Supabase credentials. **Key rotation is the only true fix for exposed credentials.**
+
+---
+
+## Exact Next Task for Following Coding Agent
+Resume product roadmap or execution plans (e.g. testing Official Dashboard table redesign or continuing with planned Phase 2/3 features). All git history is verified clean.
