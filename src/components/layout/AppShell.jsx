@@ -15,8 +15,9 @@ export const AppShell = ({ children }) => {
       }}
     >
       <AppHeader />
-      <Box component="main" sx={{ flexGrow: 1, py: { xs: 2.5, sm: 4 } }}>
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+
+      <Box component="main" sx={{ flexGrow: 1, py: { xs: 2, sm: 3 } }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 3 } }}>
           {children}
         </Container>
       </Box>

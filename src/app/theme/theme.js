@@ -2,25 +2,53 @@ import { createTheme } from '@mui/material/styles';
 
 export const statusColors = {
   ordered: {
-    light: { main: '#475569', bg: '#F1F5F9', text: '#334155' },
-    dark: { main: '#94A3B8', bg: '#1E293B', text: '#E2E8F0' },
+    light: { main: '#64748B', bg: 'rgba(100, 116, 139, 0.1)', text: '#334155', border: '#94A3B8' },
+    dark: { main: '#94A3B8', bg: 'rgba(148, 163, 184, 0.15)', text: '#E2E8F0', border: '#64748B' },
     label: 'Ordered',
   },
   budget_allocated: {
-    light: { main: '#2563EB', bg: '#EFF6FF', text: '#1E40AF' },
-    dark: { main: '#60A5FA', bg: '#1E3A8A', text: '#BFDBFE' },
+    light: { main: '#0284C7', bg: 'rgba(2, 132, 199, 0.12)', text: '#0369A1', border: '#38BDF8' },
+    dark: { main: '#38BDF8', bg: 'rgba(56, 189, 248, 0.18)', text: '#BAE6FD', border: '#0284C7' },
     label: 'Budget Allocated',
   },
   on_process: {
-    light: { main: '#D97706', bg: '#FEF3C7', text: '#92400E' },
-    dark: { main: '#FBBF24', bg: '#451A03', text: '#FDE68A' },
+    light: { main: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', text: '#B45309', border: '#FBBF24' },
+    dark: { main: '#FBBF24', bg: 'rgba(251, 191, 36, 0.18)', text: '#FEF3C7', border: '#F59E0B' },
     label: 'On Process',
   },
   finished: {
-    light: { main: '#16A34A', bg: '#DCFCE7', text: '#166534' },
-    dark: { main: '#4ADE80', bg: '#064E3B', text: '#BBF7D0' },
+    light: { main: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', text: '#065F46', border: '#34D399' },
+    dark: { main: '#34D399', bg: 'rgba(52, 211, 153, 0.18)', text: '#D1FAE5', border: '#10B981' },
     label: 'Finished',
   },
+};
+
+export const categoryColors = {
+  pothole: {
+    color: '#FF6B6B',
+  },
+  streetlight: {
+    color: '#A855F7',
+  },
+  traffic_light: {
+    color: '#00C6FF',
+  },
+  garbage: {
+    color: '#F857A6',
+  },
+  other: {
+    color: '#4E65FF',
+  },
+};
+
+export const storyGradients = {
+  active: '#7C3AED',
+  pothole: '#FF6B6B',
+  streetlight: '#A855F7',
+  traffic: '#10B981',
+  garbage: '#F857A6',
+  resolved: '#0095F6',
+  seen: '#94A3B8',
 };
 
 export const getTheme = (mode) => {
@@ -30,53 +58,47 @@ export const getTheme = (mode) => {
     palette: {
       mode,
       primary: {
-        main: isDark ? '#3B82F6' : '#1E4D8C',
-        light: isDark ? '#60A5FA' : '#3B82F6',
-        dark: isDark ? '#1D4ED8' : '#153A6B',
+        main: '#0095F6',
+        light: '#38BDF8',
+        dark: '#0072FF',
         contrastText: '#FFFFFF',
       },
       secondary: {
-        main: isDark ? '#38BDF8' : '#0284C7',
+        main: '#EC4899',
       },
       error: {
-        main: isDark ? '#F87171' : '#EF4444',
-        light: isDark ? '#FCA5A5' : '#F87171',
-        dark: isDark ? '#DC2626' : '#B91C1C',
+        main: '#FF2A54',
+        light: '#FF7680',
+        dark: '#C13584',
         contrastText: '#FFFFFF',
       },
       warning: {
-        main: isDark ? '#FBBF24' : '#D97706',
-        light: isDark ? '#FDE68A' : '#FBBF24',
-        dark: isDark ? '#B45309' : '#92400E',
+        main: '#F59E0B',
+        light: '#FCD34D',
+        dark: '#B45309',
         contrastText: '#FFFFFF',
       },
       info: {
-        main: isDark ? '#60A5FA' : '#2563EB',
-        light: isDark ? '#93C5FD' : '#60A5FA',
-        dark: isDark ? '#1D4ED8' : '#1E40AF',
+        main: '#00C6FF',
+        light: '#67E8F9',
+        dark: '#0284C7',
         contrastText: '#FFFFFF',
       },
       success: {
-        main: isDark ? '#4ADE80' : '#16A34A',
-        light: isDark ? '#86EFAC' : '#4ADE80',
-        dark: isDark ? '#15803D' : '#166534',
-        contrastText: '#FFFFFF',
-      },
-      default: {
-        main: isDark ? '#94A3B8' : '#64748B',
-        light: isDark ? '#CBD5E1' : '#94A3B8',
-        dark: isDark ? '#64748B' : '#334155',
+        main: '#10B981',
+        light: '#34D399',
+        dark: '#059669',
         contrastText: '#FFFFFF',
       },
       background: {
-        default: isDark ? '#0F172A' : '#F8FAFC',
-        paper: isDark ? '#1E293B' : '#FFFFFF',
+        default: isDark ? '#0A0E17' : '#F8F7FF',
+        paper: isDark ? '#121212' : '#FFFFFF',
       },
       text: {
-        primary: isDark ? '#F8FAFC' : '#0F172A',
-        secondary: isDark ? '#94A3B8' : '#64748B',
+        primary: isDark ? '#F5F5F5' : '#262626',
+        secondary: isDark ? '#A8A8A8' : '#737373',
       },
-      divider: isDark ? '#334155' : '#E2E8F0',
+      divider: isDark ? '#262626' : '#DBDBDB',
     },
     typography: {
       fontFamily: [
@@ -87,26 +109,39 @@ export const getTheme = (mode) => {
         'Roboto',
         'sans-serif',
       ].join(','),
-      h1: { fontWeight: 700, fontSize: '2rem', letterSpacing: '-0.02em' },
-      h2: { fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.01em' },
-      h3: { fontWeight: 600, fontSize: '1.25rem' },
-      h4: { fontWeight: 600, fontSize: '1.125rem' },
-      h5: { fontWeight: 600, fontSize: '1rem' },
-      h6: { fontWeight: 600, fontSize: '0.875rem' },
-      body1: { fontSize: '0.9375rem', lineHeight: 1.6 },
-      body2: { fontSize: '0.875rem', lineHeight: 1.5 },
-      button: { textTransform: 'none', fontWeight: 600 },
+      h1: { fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.02em' },
+      h2: { fontWeight: 800, fontSize: '1.375rem', letterSpacing: '-0.01em' },
+      h3: { fontWeight: 700, fontSize: '1.125rem' },
+      h4: { fontWeight: 700, fontSize: '1rem' },
+      h5: { fontWeight: 600, fontSize: '0.875rem' },
+      h6: { fontWeight: 600, fontSize: '0.8125rem' },
+      body1: { fontSize: '0.875rem', lineHeight: 1.5 },
+      body2: { fontSize: '0.8125rem', lineHeight: 1.45 },
+      caption: { fontSize: '0.75rem', lineHeight: 1.35 },
+      button: { textTransform: 'none', fontWeight: 700 },
     },
     shape: {
-      borderRadius: 10,
+      borderRadius: 12,
     },
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 8,
+            borderRadius: 20,
+            boxShadow: 'none',
+            fontWeight: 700,
+            padding: '6px 18px',
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              boxShadow: 'none',
+              transform: 'translateY(-1px)',
+            },
+          },
+          containedPrimary: {
+            backgroundColor: '#0095F6',
             boxShadow: 'none',
             '&:hover': {
+              backgroundColor: '#0077CC',
               boxShadow: 'none',
             },
           },
@@ -115,29 +150,39 @@ export const getTheme = (mode) => {
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
+            borderRadius: 14,
+            backgroundColor: isDark ? '#121212' : '#FFFFFF',
+            border: isDark ? '1px solid #262626' : '1px solid #DBDBDB',
             boxShadow: isDark
-              ? '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)'
-              : '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-            border: `1px solid ${isDark ? '#334155' : '#E2E8F0'}`,
+              ? '0 8px 24px rgba(0, 0, 0, 0.6)'
+              : '0 4px 16px rgba(0, 0, 0, 0.04)',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           },
         },
       },
       MuiChip: {
         styleOverrides: {
           root: {
-            fontWeight: 600,
-            borderRadius: 6,
+            fontWeight: 700,
+            borderRadius: 20,
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
           },
         },
       },
       MuiAppBar: {
         styleOverrides: {
           root: {
-            backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-            color: isDark ? '#F8FAFC' : '#0F172A',
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.92)' : 'rgba(255, 255, 255, 0.92)',
+            color: isDark ? '#F5F5F5' : '#262626',
+            backdropFilter: 'blur(20px)',
             boxShadow: 'none',
-            borderBottom: `1px solid ${isDark ? '#334155' : '#E2E8F0'}`,
+            borderBottom: isDark ? '1px solid #262626' : '1px solid #DBDBDB',
           },
         },
       },

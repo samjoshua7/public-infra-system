@@ -73,7 +73,7 @@ export const SignupPage = () => {
             Create an Account
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Join CivicSpeak in identifying and resolving public infrastructure issues across your community.
+            Join Civic Voice in identifying and resolving public infrastructure issues across your community.
           </Typography>
 
           <ErrorAlert message={error} />

@@ -71,7 +71,7 @@ export const LoginPage = () => {
             Welcome Back
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Sign in to CivicSpeak to track infrastructure reports and contribute to your community.
+            Sign in to Civic Voice to track infrastructure reports and contribute to your community.
           </Typography>
 
           <ErrorAlert message={error} />

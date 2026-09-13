@@ -45,7 +45,7 @@ export const WaitingApprovalPage = () => {
 
     // Clean phone number (remove +, spaces, dashes)
     const cleanNumber = whatsappNumber.replace(/[^\d]/g, '');
-    const defaultText = encodeURIComponent('Hey, I want to use CivicSpeak!');
+    const defaultText = encodeURIComponent('Hey, I want to use Civic Voice!');
     const waUrl = `https://wa.me/${cleanNumber}?text=${defaultText}`;
 
     window.open(waUrl, '_blank', 'noopener,noreferrer');
@@ -101,8 +101,8 @@ export const WaitingApprovalPage = () => {
 
         <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 3 }}>
           {isRejected
-            ? 'Your account access request was not approved by an administrator. CivicSpeak is currently operating with controlled access.'
-            : 'Your account is waiting for approval. CivicSpeak is currently operating with controlled access. Please contact the administrator to request access.'}
+            ? 'Your account access request was not approved by an administrator. Civic Voice is currently operating with controlled access.'
+            : 'Your account is waiting for approval. Civic Voice is currently operating with controlled access. Please contact the administrator to request access.'}
         </Typography>
 
         {noWhatsappAlert && (
