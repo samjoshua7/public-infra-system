@@ -13,6 +13,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Avatar,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -56,17 +57,21 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
   const isOwner = user && report.reporter_id === user.id;
   const isAdmin = role === 'ADMIN';
   const canManage = isOwner || isAdmin;
-
   const canEditOrDelete = report.status === 'ordered' || isAdmin;
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 60) return `${Math.max(1, diffMins)}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const handleMenuOpen = (e) => {
@@ -97,99 +102,135 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
     <>
       <Card
         sx={{
-          height: '100%',
+          mb: 2.5,
           display: 'flex',
           flexDirection: 'column',
-          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
           opacity: report.is_hidden ? 0.85 : 1,
-          border: report.is_hidden ? '1px dashed' : undefined,
-          borderColor: report.is_hidden ? 'warning.main' : undefined,
+          border: (theme) =>
+            report.is_hidden
+              ? `1px dashed ${theme.palette.warning.main}`
+              : `1px solid ${theme.palette.divider}`,
+          overflow: 'hidden',
+          transition: 'border-color 0.15s ease',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: (theme) =>
-              theme.palette.mode === 'dark'
-                ? '0 8px 16px rgba(0, 0, 0, 0.4)'
-                : '0 8px 16px rgba(0, 0, 0, 0.08)',
+            borderColor: (theme) => (report.is_hidden ? theme.palette.warning.main : theme.palette.primary.main),
           },
         }}
       >
-        <Box sx={{ position: 'relative' }}>
-          <CardMedia
-            component="img"
-            height="180"
-            image={report.photo_url}
-            alt={report.title}
-            sx={{ objectFit: 'cover' }}
-          />
+        {/* Card Top Header: Citizen Info & Status Badge */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.25,
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Avatar
+              sx={{
+                width: 30,
+                height: 30,
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                bgcolor: 'secondary.main',
+                color: '#FFFFFF',
+                borderRadius: '4px',
+              }}
+            >
+              {(report.users?.name || 'C').charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography
+                variant="subtitle2"
+                component={RouterLink}
+                to={`/profile/${report.reporter_id || ''}`}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  color: 'text.primary',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                  display: 'block',
+                  lineHeight: 1.2,
+                }}
+              >
+                {report.users?.name || 'Citizen'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                {formatDate(report.created_at)}
+              </Typography>
+            </Box>
+          </Box>
 
-          {/* Top Left: Hidden Badge */}
-          {report.is_hidden && (
-            <Box sx={{ position: 'absolute', top: 12, left: 12 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {report.is_hidden && (
               <Chip
                 icon={<VisibilityOffOutlinedIcon fontSize="small" />}
-                label="Hidden — only visible to you"
+                label="Hidden"
                 size="small"
                 color="warning"
-                sx={{ fontWeight: 700 }}
+                sx={{ fontWeight: 600, fontSize: '0.6875rem', height: 22, borderRadius: '4px' }}
               />
-            </Box>
-          )}
-
-          {/* Top Right: Status Chip & Owner Menu */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
+            )}
             <Chip
               label={statusConfig.label}
               size="small"
               sx={{
                 backgroundColor: statusStyle.bg,
                 color: statusStyle.text,
-                fontWeight: 700,
-                border: `1px solid ${statusStyle.main}`,
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24,
+                borderRadius: '4px',
+                border: `1px solid ${statusStyle.border || statusStyle.main}`,
               }}
             />
             {canManage && (
-              <IconButton
-                size="small"
-                onClick={handleMenuOpen}
-                sx={{
-                  bgcolor: 'background.paper',
-                  boxShadow: 1,
-                  '&:hover': { bgcolor: 'background.paper', opacity: 0.9 },
-                }}
-                aria-label="report management menu"
-              >
+              <IconButton size="small" onClick={handleMenuOpen} aria-label="Report actions">
                 <MoreVertIcon fontSize="small" />
               </IconButton>
             )}
           </Box>
+        </Box>
 
-          <Box
+        {/* Media Container */}
+        <Box sx={{ position: 'relative', width: '100%', bgcolor: 'background.default' }}>
+          <CardMedia
+            component="img"
+            image={report.photo_url}
+            alt={report.title}
+            loading="lazy"
             sx={{
-              position: 'absolute',
-              bottom: 12,
-              left: 12,
+              width: '100%',
+              maxHeight: 400,
+              objectFit: 'cover',
+              display: 'block',
             }}
-          >
+          />
+
+          {/* Category Tag pill on image */}
+          <Box sx={{ position: 'absolute', bottom: 10, left: 12 }}>
             <Chip
               label={categoryLabels[report.category] || report.category}
               size="small"
-              color="primary"
-              variant="filled"
-              sx={{ opacity: 0.95, fontWeight: 600 }}
+              sx={{
+                bgcolor: 'rgba(15, 23, 42, 0.85)',
+                color: '#FFFFFF',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                borderRadius: '4px',
+                backdropFilter: 'blur(4px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}
             />
           </Box>
         </Box>
 
-        <CardContent sx={{ flexGrow: 1, pt: 2, pb: 1 }}>
+        {/* Content Section */}
+        <CardContent sx={{ px: 2, pt: 1.5, pb: 1 }}>
           <Typography
             variant="h6"
             component={RouterLink}
@@ -197,12 +238,14 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
             sx={{
               textDecoration: 'none',
               color: 'text.primary',
-              fontWeight: 700,
+              fontWeight: 600,
+              fontSize: '1rem',
+              lineHeight: 1.35,
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              mb: 1,
+              mb: 0.75,
               '&:hover': { color: 'primary.main' },
             }}
           >
@@ -217,45 +260,67 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              mb: 2,
+              mb: 1.5,
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
             }}
           >
             {report.description}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-            <LocationOnIcon fontSize="inherit" color="action" />
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
+          {/* Location Pin */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              color: 'text.secondary',
+            }}
+          >
+            <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="a"
+              href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                textDecoration: 'none',
+                '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+              }}
+            >
+              GPS: {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
             </Typography>
           </Box>
         </CardContent>
 
+        {/* Action Row */}
         <CardActions
           sx={{
             px: 2,
-            py: 1.5,
+            py: 1,
             borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+            display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Typography variant="caption" color="text.secondary">
-            By {report.users?.name || 'Citizen'} • {formatDate(report.created_at)}
-          </Typography>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={isAuth ? (isLiked ? 'Unlike' : 'Like') : 'Log in to like'}>
+            <Tooltip title={isAuth ? (isLiked ? 'Unlike report' : 'Support this report') : 'Sign in to support'}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <IconButton
                   size="small"
                   onClick={() => onToggleLike(report.report_id)}
                   color={isLiked ? 'error' : 'inherit'}
                   disabled={!isAuth}
-                  aria-label="like report"
+                  aria-label="Support report"
                 >
                   {isLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
                 </IconButton>
-                <Typography variant="caption" fontWeight="600" color="text.secondary">
+                <Typography variant="caption" fontWeight="600" color="text.secondary" sx={{ ml: 0.25 }}>
                   {report.like_count || 0}
                 </Typography>
               </Box>
@@ -268,18 +333,32 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
                 display: 'flex',
                 alignItems: 'center',
                 textDecoration: 'none',
-                color: 'text.secondary',
-                gap: 0.5,
+                color: 'inherit',
+                ml: 1,
               }}
             >
-              <IconButton size="small" color="inherit" component="span" aria-label="comments">
+              <IconButton size="small" color="inherit" component="span" aria-label="View comments">
                 <ChatBubbleOutlineIcon fontSize="small" />
               </IconButton>
-              <Typography variant="caption" fontWeight="600">
+              <Typography variant="caption" fontWeight="600" color="text.secondary" sx={{ ml: 0.25 }}>
                 {report.comment_count || 0}
               </Typography>
             </Box>
           </Box>
+
+          <Typography
+            component={RouterLink}
+            to={`/report/${report.report_id}`}
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              color: 'text.primary',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            View Details & Timeline →
+          </Typography>
         </CardActions>
       </Card>
 
@@ -291,7 +370,7 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <Tooltip title={!canEditOrDelete ? "Can't edit after action has been taken" : ''} placement="left">
+        <Tooltip title={!canEditOrDelete ? "Cannot edit after action has been taken" : ''} placement="left">
           <span>
             <MenuItem
               disabled={!canEditOrDelete}
@@ -315,7 +394,7 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
           <ListItemText>{report.is_hidden ? 'Unhide from Feed' : 'Hide from Feed'}</ListItemText>
         </MenuItem>
 
-        <Tooltip title={!canEditOrDelete ? "Can't delete after action has been taken" : ''} placement="left">
+        <Tooltip title={!canEditOrDelete ? "Cannot delete after action has been taken" : ''} placement="left">
           <span>
             <MenuItem
               disabled={!canEditOrDelete}

@@ -34,28 +34,28 @@ export const NotificationsPage = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
-        // Map into Instagram-style notifications
+        // Map into clean civic activity stream
         const items = (recentReports || []).map((r, idx) => {
           let text = '';
           let icon = null;
           let iconBg = '';
 
           if (r.status === 'finished') {
-            text = `Municipal Official marked "${r.title}" as Finished!`;
-            icon = <BuildIcon sx={{ fontSize: 14, color: '#FFFFFF' }} />;
-            iconBg = '#10B981';
+            text = `Issue "${r.title}" was marked as Finished.`;
+            icon = <BuildIcon sx={{ fontSize: 16, color: '#FFFFFF' }} />;
+            iconBg = '#059669';
           } else if (r.status === 'budget_allocated') {
             text = `Budget has been allocated for "${r.title}".`;
-            icon = <BuildIcon sx={{ fontSize: 14, color: '#FFFFFF' }} />;
+            icon = <BuildIcon sx={{ fontSize: 16, color: '#FFFFFF' }} />;
             iconBg = '#0284C7';
           } else if (idx % 2 === 0) {
-            text = `${r.users?.name || 'A citizen'} reported a new ${r.category} hazard.`;
-            icon = <FavoriteIcon sx={{ fontSize: 14, color: '#FFFFFF' }} />;
-            iconBg = '#ED4956';
+            text = `${r.users?.name || 'A citizen'} reported a new ${r.category || 'hazard'}.`;
+            icon = <FavoriteIcon sx={{ fontSize: 16, color: '#FFFFFF' }} />;
+            iconBg = '#2563EB';
           } else {
-            text = `Community members commented on "${r.title}".`;
-            icon = <ChatBubbleIcon sx={{ fontSize: 14, color: '#FFFFFF' }} />;
-            iconBg = '#8B5CF6';
+            text = `New community comments on "${r.title}".`;
+            icon = <ChatBubbleIcon sx={{ fontSize: 16, color: '#FFFFFF' }} />;
+            iconBg = '#64748B';
           }
 
           return {
@@ -115,7 +115,7 @@ export const NotificationsPage = () => {
         <Paper
           variant="outlined"
           sx={{
-            borderRadius: 3,
+            borderRadius: 2,
             overflow: 'hidden',
             bgcolor: 'background.paper',
           }}

@@ -82,7 +82,7 @@ export const QuickAdvanceDialog = ({ report, open, onClose, onStatusUpdated }) =
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: '6px' } }}>
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" fontWeight="700">
           Advance Report Status

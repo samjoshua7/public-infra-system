@@ -200,7 +200,6 @@ export const ProfilePage = () => {
                 size="small"
                 startIcon={<ShareOutlinedIcon />}
                 onClick={handleShareProfile}
-                sx={{ borderRadius: 2 }}
               >
                 Share
               </Button>
@@ -212,7 +211,6 @@ export const ProfilePage = () => {
                   size="small"
                   startIcon={<LogoutIcon />}
                   onClick={handleSignOut}
-                  sx={{ borderRadius: 2 }}
                 >
                   Sign Out
                 </Button>

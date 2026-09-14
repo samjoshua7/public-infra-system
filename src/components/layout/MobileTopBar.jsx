@@ -1,87 +1,188 @@
-import React from 'react';
-import { Box, Typography, Avatar, IconButton } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Avatar,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
+} from '@mui/material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
-import { useThemeMode } from '../../app/providers/ThemeModeProvider';
 import { useAuth } from '../../hooks/useAuth';
+import { signOut } from '../../features/auth/api';
+import { ThemeToggleButton } from './ThemeToggleButton';
 
 export const MobileTopBar = () => {
-  const { mode, toggleThemeMode } = useThemeMode();
-  const { isAuthenticated, role } = useAuth();
+  const { user, profile, role, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleSignOut = async () => {
+    handleMenuClose();
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
+  };
+
+  const canAccessDashboard = role === 'GOVERNMENT_OFFICIAL' || role === 'ADMIN';
+  const canAccessAdmin = role === 'ADMIN';
 
   return (
-    <Box
-      component="header"
+    <AppBar
+      position="sticky"
+      color="default"
+      elevation={0}
       sx={{
         display: { xs: 'flex', md: 'none' },
-        position: 'sticky',
-        top: 0,
-        height: 52,
-        bgcolor: (theme) =>
-          theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-        backdropFilter: 'blur(20px)',
+        bgcolor: 'background.paper',
         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 2,
         zIndex: 1100,
       }}
     >
-      <Box
-        component={RouterLink}
-        to={role === 'GOVERNMENT_OFFICIAL' ? '/dashboard' : '/feed'}
+      <Toolbar
+        variant="dense"
         sx={{
+          minHeight: 52,
+          height: 52,
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: 1,
-          textDecoration: 'none',
-          color: 'text.primary',
+          px: 2,
         }}
       >
-        <Avatar
+        {/* Brand */}
+        <Box
+          component={RouterLink}
+          to={role === 'GOVERNMENT_OFFICIAL' ? '/dashboard' : '/feed'}
           sx={{
-            bgcolor: 'primary.main',
-            color: '#FFFFFF',
-            width: 28,
-            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            textDecoration: 'none',
+            color: 'text.primary',
           }}
         >
-          <LocationCityIcon sx={{ fontSize: 18 }} />
-        </Avatar>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 800,
-            fontSize: '1.2rem',
-            letterSpacing: '-0.03em',
-            color: 'primary.main',
-          }}
-        >
-          Civic Voice
-        </Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <IconButton size="small" onClick={toggleThemeMode} color="inherit" aria-label="Toggle theme">
-          {mode === 'dark' ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
-        </IconButton>
-
-        {isAuthenticated && (
-          <IconButton
-            size="small"
-            component={RouterLink}
-            to="/notifications"
-            color="inherit"
-            aria-label="Notifications"
+          <Avatar
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              width: 28,
+              height: 28,
+              borderRadius: 0.75,
+            }}
           >
-            <FavoriteBorderIcon fontSize="small" />
-          </IconButton>
-        )}
-      </Box>
-    </Box>
+            <LocationCityIcon sx={{ fontSize: 16 }} />
+          </Avatar>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 700,
+              fontSize: '1rem',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Civic Voice
+          </Typography>
+        </Box>
+
+        {/* Right Controls: Theme Toggle & Avatar Menu */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ThemeToggleButton />
+
+          {isAuthenticated ? (
+            <>
+              <IconButton size="small" onClick={handleMenuOpen} aria-label="Account menu">
+                <Avatar
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    bgcolor: 'secondary.main',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: 0.75,
+                  }}
+                >
+                  {(profile?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                </Avatar>
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="subtitle2" noWrap fontWeight="600" sx={{ fontSize: '0.8125rem' }}>
+                    {profile?.name || 'Citizen'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap display="block">
+                    {user?.email}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose} sx={{ gap: 1.25, fontSize: '0.8125rem' }}>
+                  <AccountCircleIcon fontSize="small" />
+                  My Profile
+                </MenuItem>
+
+                {canAccessDashboard && (
+                  <MenuItem component={RouterLink} to="/dashboard" onClick={handleMenuClose} sx={{ gap: 1.25, fontSize: '0.8125rem' }}>
+                    <DashboardIcon fontSize="small" />
+                    Official Dashboard
+                  </MenuItem>
+                )}
+
+                {canAccessAdmin && (
+                  <MenuItem component={RouterLink} to="/admin" onClick={handleMenuClose} sx={{ gap: 1.25, fontSize: '0.8125rem' }}>
+                    <AdminPanelSettingsIcon fontSize="small" />
+                    Admin Panel
+                  </MenuItem>
+                )}
+
+                <Divider />
+
+                <MenuItem onClick={handleSignOut} sx={{ color: 'error.main', gap: 1.25, fontSize: '0.8125rem' }}>
+                  <LogoutIcon fontSize="small" />
+                  Sign Out
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Box
+              component={RouterLink}
+              to="/login"
+              sx={{
+                textDecoration: 'none',
+                color: 'text.primary',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                px: 1,
+              }}
+            >
+              Log In
+            </Box>
+          )}
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };

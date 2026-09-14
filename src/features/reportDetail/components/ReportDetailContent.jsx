@@ -285,7 +285,7 @@ export const ReportDetailContent = ({
       />
 
       {/* Main Report Card */}
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden', mb: 4 }}>
+      <Paper sx={{ borderRadius: '6px', overflow: 'hidden', mb: 4 }}>
         <Box sx={{ position: 'relative', width: '100%', maxHeight: 450, overflow: 'hidden', bgcolor: 'black' }}>
           <Box
             component="img"
@@ -305,11 +305,13 @@ export const ReportDetailContent = ({
           <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
             <Chip
               label={statusConfig.label}
+              size="small"
               sx={{
                 backgroundColor: statusStyle.bg,
                 color: statusStyle.text,
-                fontWeight: 700,
-                border: `1px solid ${statusStyle.main}`,
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                border: `1px solid ${statusStyle.border || statusStyle.main}`,
               }}
             />
             <Chip
@@ -407,7 +409,7 @@ export const ReportDetailContent = ({
       </Paper>
 
       {/* Status Audit History Timeline */}
-      <Paper sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3, mb: 4 }}>
+      <Paper sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: '6px', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <HistoryIcon color="primary" />
           <Typography variant="h6" fontWeight="700">
@@ -437,8 +439,8 @@ export const ReportDetailContent = ({
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Box
                       sx={{
-                        width: 14,
-                        height: 14,
+                        width: 12,
+                        height: 12,
                         borderRadius: '50%',
                         bgcolor: dotColor,
                         mt: '4px',
@@ -469,8 +471,8 @@ export const ReportDetailContent = ({
         )}
       </Paper>
 
-      {/* Comments Section */}
-      <Paper sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3 }}>
+      {/* Community Comments Section */}
+      <Paper sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: '6px' }}>
         <Typography variant="h6" fontWeight="700" gutterBottom>
           Community Comments ({comments.length})
         </Typography>
@@ -523,7 +525,8 @@ export const ReportDetailContent = ({
                 sx={{
                   p: 2,
                   bgcolor: 'action.hover',
-                  borderRadius: 2,
+                  borderRadius: '4px',
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>

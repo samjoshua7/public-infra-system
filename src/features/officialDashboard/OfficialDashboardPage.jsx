@@ -134,7 +134,7 @@ export const OfficialDashboardPage = () => {
       </Box>
 
       {/* Status Tabs Paper */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
+      <Paper sx={{ mb: 3, borderRadius: '6px' }}>
         <Tabs
           value={statusTab}
           onChange={handleTabChange}
@@ -169,7 +169,7 @@ export const OfficialDashboardPage = () => {
         />
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <TableContainer component={Paper} sx={{ borderRadius: '6px', overflow: 'hidden' }}>
             <Table size="small" sx={{ minWidth: 750 }} aria-label="official reports table">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>

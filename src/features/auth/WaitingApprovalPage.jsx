@@ -79,7 +79,7 @@ export const WaitingApprovalPage = () => {
           p: { xs: 3, sm: 5 },
           maxWidth: 520,
           width: '100%',
-          borderRadius: 3,
+          borderRadius: '6px',
           textAlign: 'center',
         }}
       >

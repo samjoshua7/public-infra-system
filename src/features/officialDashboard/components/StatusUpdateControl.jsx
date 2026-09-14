@@ -77,7 +77,7 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: '6px',
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50'),

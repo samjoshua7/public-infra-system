@@ -88,7 +88,7 @@ export const ExplorePage = () => {
               </InputAdornment>
             ) : null,
             sx: {
-              borderRadius: 3,
+              borderRadius: 1,
               bgcolor: 'background.paper',
             },
           }}
@@ -120,7 +120,7 @@ export const ExplorePage = () => {
         ))}
       </Box>
 
-      {/* 3-Column Instagram Media Grid */}
+      {/* 3-Column Visual Reports Grid */}
       {loading ? (
         <Grid container spacing={1}>
           {[...Array(9)].map((_, i) => (

@@ -245,7 +245,7 @@ export const AdminUsersPage = () => {
       </Box>
 
       {/* Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
+      <Paper sx={{ mb: 3, borderRadius: '6px' }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => setActiveTab(val)}
@@ -273,7 +273,7 @@ export const AdminUsersPage = () => {
             />
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+              <TableContainer component={Paper} sx={{ borderRadius: '6px', overflow: 'hidden' }}>
                 <Table sx={{ minWidth: 750 }} aria-label="user management table">
                   <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
@@ -443,7 +443,7 @@ export const AdminUsersPage = () => {
 
       {/* TAB 1: SYSTEM SETTINGS */}
       {activeTab === 1 && (
-        <Paper component="form" onSubmit={handleSaveSettings} sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3 }}>
+        <Paper component="form" onSubmit={handleSaveSettings} sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: '6px' }}>
           <Typography variant="h6" fontWeight="700" gutterBottom>
             Application & Security Settings
           </Typography>

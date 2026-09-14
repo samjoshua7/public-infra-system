@@ -20,7 +20,7 @@ export const ReportDetailDialog = ({ reportId, onClose, onStatusUpdated }) => {
       scroll="paper"
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: '6px',
           maxHeight: '90vh',
         },
       }}

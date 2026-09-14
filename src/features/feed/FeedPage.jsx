@@ -8,12 +8,12 @@ import {
   Container,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
 import { listReports, fetchUserLikedReportIds, toggleReportLike } from './api';
-import { StoryBar } from './components/StoryBar';
-import { InstagramPostCard } from './components/InstagramPostCard';
+import { CategoryFilterBar } from './components/CategoryFilterBar';
+import { ReportCard } from './components/ReportCard';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
@@ -90,23 +90,22 @@ export const FeedPage = () => {
   };
 
   return (
-    <Container maxWidth="sm" disableGutters sx={{ px: { xs: 0, sm: 2 }, py: { xs: 0, sm: 2 } }}>
-      {/* 1. Header Bar with Report Button & Title */}
+    <Container maxWidth="md" disableGutters sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+      {/* 1. Header Bar with Title & Report Button */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          px: { xs: 2, sm: 0 },
-          mb: 2,
+          mb: 2.5,
         }}
       >
         <Box>
-          <Typography variant="h6" fontWeight="800" sx={{ letterSpacing: '-0.02em' }}>
-            Civic Feed
+          <Typography variant="h5" fontWeight="700" sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            Public Feed
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Tracking {totalCount} local infrastructure reports
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            Tracking {totalCount} verified infrastructure reports
           </Typography>
         </Box>
 
@@ -116,43 +115,32 @@ export const FeedPage = () => {
             to="/report/new"
             variant="contained"
             color="primary"
-            startIcon={<AddCircleIcon sx={{ fontSize: 18 }} />}
+            startIcon={<AddCircleOutlineIcon sx={{ fontSize: 18 }} />}
             size="small"
-            sx={{
-              fontWeight: 700,
-              borderRadius: 5,
-              px: 2,
-              boxShadow: '0 2px 8px rgba(0, 149, 246, 0.35)',
-            }}
           >
             Report Issue
           </Button>
         )}
       </Box>
 
-      {/* 2. Instagram Stories Category Bar */}
-      <StoryBar
+      {/* 2. Crisp Category Filter Bar */}
+      <CategoryFilterBar
         activeCategory={category}
         onSelectCategory={(cat) => {
           setCategory(cat);
           setPage(1);
         }}
-        activeStatus={status}
-        onSelectStatus={(st) => {
-          setStatus(st);
-          setPage(1);
-        }}
       />
 
-      {/* 3. Instagram-Style Status Filter Pills */}
+      {/* 3. Clean Status Filter Pills */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          px: { xs: 2, sm: 0 },
-          mb: 2.5,
+          mb: 3,
           overflowX: 'auto',
+          pb: 0.5,
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
         }}
@@ -161,13 +149,20 @@ export const FeedPage = () => {
           label="All Statuses"
           clickable
           size="small"
-          variant={status === 'all' ? 'filled' : 'outlined'}
-          color={status === 'all' ? 'primary' : 'default'}
           onClick={() => {
             setStatus('all');
             setPage(1);
           }}
-          sx={{ fontWeight: 600 }}
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.8125rem',
+            borderRadius: '4px',
+            borderWidth: 1,
+            borderStyle: 'solid',
+            borderColor: status === 'all' ? 'primary.main' : 'divider',
+            bgcolor: status === 'all' ? 'primary.main' : 'background.paper',
+            color: status === 'all' ? 'primary.contrastText' : 'text.secondary',
+          }}
         />
         {STATUS_ORDER.map((st) => {
           const isSelected = status === st;
@@ -177,13 +172,20 @@ export const FeedPage = () => {
               label={STATUS_LABELS[st]}
               clickable
               size="small"
-              variant={isSelected ? 'filled' : 'outlined'}
-              color={isSelected ? 'primary' : 'default'}
               onClick={() => {
                 setStatus(st === status ? 'all' : st);
                 setPage(1);
               }}
-              sx={{ fontWeight: 600 }}
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.8125rem',
+                borderRadius: '4px',
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: isSelected ? 'primary.main' : 'divider',
+                bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                color: isSelected ? 'primary.contrastText' : 'text.secondary',
+              }}
             />
           );
         })}
@@ -197,7 +199,7 @@ export const FeedPage = () => {
               setStatus('all');
               setPage(1);
             }}
-            sx={{ fontSize: '0.75rem', py: 0, minWidth: 'auto', flexShrink: 0, fontWeight: 600 }}
+            sx={{ fontSize: '0.75rem', py: 0.25, minWidth: 'auto', flexShrink: 0, fontWeight: 600 }}
           >
             Reset
           </Button>
@@ -205,28 +207,26 @@ export const FeedPage = () => {
       </Box>
 
       {/* Error Alert if any */}
-      <Box sx={{ px: { xs: 2, sm: 0 } }}>
-        <ErrorAlert message={error} onRetry={loadReports} />
-      </Box>
+      {error && (
+        <Box sx={{ mb: 2 }}>
+          <ErrorAlert message={error} onRetry={loadReports} />
+        </Box>
+      )}
 
-      {/* 4. Instagram Post Stream */}
+      {/* 4. Stream of Clean Report Cards */}
       {loading ? (
-        <Box sx={{ px: { xs: 2, sm: 0 } }}>
-          <LoadingSkeleton count={2} />
-        </Box>
+        <LoadingSkeleton count={3} />
       ) : reports.length === 0 ? (
-        <Box sx={{ px: { xs: 2, sm: 0 } }}>
-          <EmptyState
-            title="No Reports Found"
-            description="No infrastructure reports match this category yet. Be the first to report."
-            actionText={isAuthenticated ? 'Report an Issue' : 'Sign In to Report'}
-            onAction={() => {}}
-          />
-        </Box>
+        <EmptyState
+          title="No Reports Found"
+          description="No infrastructure reports match this filter criteria. Be the first to report."
+          actionText={isAuthenticated ? 'Report an Issue' : 'Sign In to Report'}
+          onAction={() => {}}
+        />
       ) : (
         <>
           {reports.map((report) => (
-            <InstagramPostCard
+            <ReportCard
               key={report.report_id}
               report={report}
               isLiked={likedReportIds.has(report.report_id)}
@@ -244,7 +244,7 @@ export const FeedPage = () => {
             />
           ))}
 
-          {/* Instagram-Style Clean Pagination */}
+          {/* Clean Pagination */}
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
               <Pagination

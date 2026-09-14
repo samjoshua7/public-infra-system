@@ -49,7 +49,7 @@ export const PhotoCaptureStep = ({
       </Typography>
 
       {/* Geolocation Status Alert */}
-      <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
+      <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.paper', borderRadius: '4px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <LocationOnIcon color={geoCoords ? 'success' : geoError ? 'error' : 'action'} />
           <Box sx={{ flexGrow: 1 }}>
@@ -103,7 +103,7 @@ export const PhotoCaptureStep = ({
             p: 6,
             border: '2px dashed',
             borderColor: 'divider',
-            borderRadius: 3,
+            borderRadius: '4px',
             textAlign: 'center',
             cursor: 'pointer',
             bgcolor: 'action.hover',
@@ -135,7 +135,7 @@ export const PhotoCaptureStep = ({
           </Card>
 
           {/* Opt-In AI Checkbox */}
-          <Paper sx={{ p: 1.5, mb: 3, bgcolor: 'action.hover', borderRadius: 2 }}>
+          <Paper sx={{ p: 1.5, mb: 3, bgcolor: 'action.hover', borderRadius: '4px' }}>
             <FormControlLabel
               control={
                 <Checkbox
@@ -168,7 +168,7 @@ export const PhotoCaptureStep = ({
 
             <Button
               variant="contained"
-              color={aiFillUpEnabled ? 'secondary' : 'primary'}
+              color="primary"
               startIcon={
                 analyzing ? (
                   <CircularProgress size={20} color="inherit" />
