@@ -28,6 +28,14 @@ const categoryOptions = [
   { id: 'other', label: 'Other' },
 ];
 
+const categoryFallbackImages = {
+  pothole: '/images/pothole.jpg',
+  streetlight: '/images/streetlight.jpg',
+  traffic_light: '/images/traffic_light.jpg',
+  garbage: '/images/garbage.jpg',
+  other: '/images/pothole.jpg',
+};
+
 export const ExplorePage = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,9 +166,15 @@ export const ExplorePage = () => {
               >
                 <CardMedia
                   component="img"
-                  image={report.photo_url}
+                  image={report.photo_url || categoryFallbackImages[report.category] || '/images/traffic_light.jpg'}
                   alt={report.title}
                   loading="lazy"
+                  onError={(e) => {
+                    const fallback = categoryFallbackImages[report.category] || '/images/traffic_light.jpg';
+                    if (e.currentTarget.src !== fallback) {
+                      e.currentTarget.src = fallback;
+                    }
+                  }}
                   sx={{
                     position: 'absolute',
                     top: 0,

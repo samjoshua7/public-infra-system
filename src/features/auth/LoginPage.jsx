@@ -67,12 +67,28 @@ export const LoginPage = () => {
     >
       <Card sx={{ maxWidth: 420, width: '100%', p: 2 }}>
         <CardContent>
-          <Typography variant="h5" component="h1" gutterBottom fontWeight="700">
-            Welcome Back
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Sign in to Civic Voice to track infrastructure reports and contribute to your community.
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2.5, textAlign: 'center' }}>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Civic Voice"
+              sx={{
+                width: 68,
+                height: 68,
+                borderRadius: '50%',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                border: '2px solid',
+                borderColor: 'divider',
+                mb: 1.5,
+              }}
+            />
+            <Typography variant="h5" component="h1" fontWeight="700">
+              Welcome Back
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Sign in to Civic Voice to track infrastructure reports and contribute to your community.
+            </Typography>
+          </Box>
 
           <ErrorAlert message={error} />
 

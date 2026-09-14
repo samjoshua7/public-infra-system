@@ -58,17 +58,17 @@ export const PWAInstallPrompt = () => {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
           <Box
             component="img"
-            src="/icons/icon.svg"
+            src="/logo.png"
             alt="Civic Voice Logo"
             sx={{
-              width: 42,
-              height: 42,
-              borderRadius: '4px',
+              width: 44,
+              height: 44,
+              borderRadius: '8px',
               border: '1px solid',
               borderColor: 'divider',
               flexShrink: 0,
-              bgcolor: 'primary.main',
-              p: 0.5,
+              bgcolor: 'background.paper',
+              objectFit: 'cover',
             }}
           />
 
