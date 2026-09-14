@@ -33,17 +33,31 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Exclude non-GET, Supabase API/Auth, Express backend, and chrome extensions from service worker cache
+  // Exclude non-GET, Supabase API/Auth, Express backend, Chrome extensions, and ALL dev/HMR requests
+  const isDevOrScript =
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.pathname.includes('vite') ||
+    url.pathname.endsWith('.jsx') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.ts') ||
+    url.pathname.endsWith('.tsx');
+
   if (
     event.request.method !== 'GET' ||
+    isDevOrScript ||
     url.hostname.includes('supabase.co') ||
     url.port === '5000' ||
     url.protocol.startsWith('chrome-extension')
   ) {
+    // Let the browser handle normally via network without SW interception
     return;
   }
 
-  // Network-first strategy with cache fallback
+  // Network-first strategy with cache fallback for static production assets
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
@@ -59,9 +73,9 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('/') || caches.match('/feed');
           }
-          return new Response('Network offline', { status: 503, statusText: 'Offline' });
+          return new Response('', { status: 408, statusText: 'Request timed out' });
         });
       })
   );
