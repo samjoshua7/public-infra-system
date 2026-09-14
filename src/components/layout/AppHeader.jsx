@@ -5,7 +5,6 @@ import {
   Typography,
   Button,
   Box,
-  Container,
   IconButton,
   Menu,
   MenuItem,
@@ -14,13 +13,10 @@ import {
   Divider,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import LocationCityIcon from '@mui/icons-material/LocationCity';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { useAuth } from '../../hooks/useAuth';
 import { signOut } from '../../features/auth/api';
@@ -46,16 +42,23 @@ export const AppHeader = () => {
     }
   };
 
+  const getPageTitle = () => {
+    const p = location.pathname;
+    if (p.startsWith('/feed')) return 'Public Infrastructure Feed';
+    if (p.startsWith('/explore')) return 'Explore Infrastructure Issues';
+    if (p.startsWith('/report/new')) return 'Report Infrastructure Issue';
+    if (p.startsWith('/report/')) return 'Report Details';
+    if (p.startsWith('/dashboard')) return 'Official Status Pipeline Dashboard';
+    if (p.startsWith('/admin')) return 'Administration & User Management';
+    if (p.startsWith('/notifications')) return 'Activity & Notifications';
+    if (p.startsWith('/profile')) return 'Citizen Profile';
+    return 'Civic Voice';
+  };
+
   const getRoleLabel = () => {
     if (role === 'ADMIN') return 'Admin';
     if (role === 'GOVERNMENT_OFFICIAL') return 'Official';
     return 'Citizen';
-  };
-
-  const getRoleColor = () => {
-    if (role === 'ADMIN') return 'error';
-    if (role === 'GOVERNMENT_OFFICIAL') return 'warning';
-    return 'default';
   };
 
   const canAccessDashboard = role === 'GOVERNMENT_OFFICIAL' || role === 'ADMIN';
@@ -67,242 +70,157 @@ export const AppHeader = () => {
       color="default"
       elevation={0}
       sx={{
+        display: { xs: 'none', md: 'flex' },
         bgcolor: 'background.paper',
         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         zIndex: 1100,
       }}
     >
-      <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ minHeight: 64, height: 64, gap: 2 }}>
-          {/* Logo & Brand */}
-          <Box
-            component={RouterLink}
-            to={role === 'GOVERNMENT_OFFICIAL' ? '/dashboard' : '/feed'}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.25,
-              textDecoration: 'none',
-              color: 'inherit',
-              mr: 2,
-            }}
-          >
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                color: '#FFFFFF',
-                width: 36,
-                height: 36,
-                borderRadius: 2,
-              }}
-            >
-              <LocationCityIcon fontSize="small" />
-            </Avatar>
-            <Typography
-              variant="h6"
-              component="span"
-              sx={{
-                fontWeight: 800,
-                fontSize: '1.25rem',
-                letterSpacing: '-0.02em',
-                color: 'text.primary',
-              }}
-            >
-              Civic Voice
-            </Typography>
-          </Box>
+      <Toolbar
+        sx={{
+          minHeight: 56,
+          height: 56,
+          px: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        {/* Current Section Title */}
+        <Typography
+          variant="subtitle1"
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.9375rem',
+            color: 'text.primary',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {getPageTitle()}
+        </Typography>
 
-          {/* Navigation Links */}
-          <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, alignItems: 'center' }}>
-            {role !== 'GOVERNMENT_OFFICIAL' && (
-              <Button
-                component={RouterLink}
-                to="/feed"
-                startIcon={<DynamicFeedIcon sx={{ fontSize: 19 }} />}
-                color={location.pathname === '/feed' || location.pathname === '/' ? 'primary' : 'inherit'}
+        {/* Right Section: Role, Theme Toggle, Account */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <ThemeToggleButton />
+
+          {isAuthenticated ? (
+            <>
+              <Chip
+                label={getRoleLabel()}
                 size="small"
+                variant="outlined"
                 sx={{
                   fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
+                  fontSize: '0.75rem',
+                  borderRadius: 1,
+                  height: 24,
                 }}
-              >
-                Public Feed
-              </Button>
-            )}
+              />
 
-            {isAuthenticated && role !== 'GOVERNMENT_OFFICIAL' && (
+              <IconButton
+                onClick={handleMenuOpen}
+                size="small"
+                aria-label="User profile menu"
+                sx={{ p: 0.5 }}
+              >
+                <Avatar
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    bgcolor: 'secondary.main',
+                    color: '#FFFFFF',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    borderRadius: 1,
+                  }}
+                >
+                  {(profile?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                </Avatar>
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="subtitle2" noWrap fontWeight="600" sx={{ fontSize: '0.8125rem' }}>
+                    {profile?.name || 'Citizen'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap display="block">
+                    {user?.email}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                <MenuItem
+                  component={RouterLink}
+                  to="/profile"
+                  onClick={handleMenuClose}
+                  sx={{ gap: 1.25, fontSize: '0.8125rem' }}
+                >
+                  <AccountCircleIcon fontSize="small" />
+                  My Profile
+                </MenuItem>
+
+                {canAccessDashboard && (
+                  <MenuItem
+                    component={RouterLink}
+                    to="/dashboard"
+                    onClick={handleMenuClose}
+                    sx={{ gap: 1.25, fontSize: '0.8125rem' }}
+                  >
+                    <DashboardIcon fontSize="small" />
+                    Official Dashboard
+                  </MenuItem>
+                )}
+
+                {canAccessAdmin && (
+                  <MenuItem
+                    component={RouterLink}
+                    to="/admin"
+                    onClick={handleMenuClose}
+                    sx={{ gap: 1.25, fontSize: '0.8125rem' }}
+                  >
+                    <AdminPanelSettingsIcon fontSize="small" />
+                    Admin Panel
+                  </MenuItem>
+                )}
+
+                <Divider />
+
+                <MenuItem onClick={handleSignOut} sx={{ color: 'error.main', gap: 1.25, fontSize: '0.8125rem' }}>
+                  <LogoutIcon fontSize="small" />
+                  Sign Out
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 component={RouterLink}
-                to="/report/new"
-                startIcon={<AddCircleIcon sx={{ fontSize: 19 }} />}
+                to="/login"
+                variant="outlined"
+                size="small"
+              >
+                Log In
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/signup"
                 variant="contained"
                 color="primary"
                 size="small"
-                sx={{
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                }}
               >
-                Report Issue
+                Sign Up
               </Button>
-            )}
-
-            {canAccessDashboard && (
-              <Button
-                component={RouterLink}
-                to="/dashboard"
-                startIcon={<DashboardIcon sx={{ fontSize: 19 }} />}
-                color={location.pathname === '/dashboard' ? 'warning' : 'inherit'}
-                size="small"
-                sx={{
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  display: { xs: 'none', md: 'inline-flex' },
-                }}
-              >
-                Official Dashboard
-              </Button>
-            )}
-
-            {canAccessAdmin && (
-              <Button
-                component={RouterLink}
-                to="/admin"
-                startIcon={<AdminPanelSettingsIcon sx={{ fontSize: 19 }} />}
-                color={location.pathname === '/admin' ? 'error' : 'inherit'}
-                size="small"
-                sx={{
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  display: { xs: 'none', md: 'inline-flex' },
-                }}
-              >
-                Admin Panel
-              </Button>
-            )}
-          </Box>
-
-          {/* Action buttons & User menu */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <ThemeToggleButton />
-
-            {isAuthenticated ? (
-              <>
-                <Chip
-                  label={getRoleLabel()}
-                  color={getRoleColor()}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    display: { xs: 'none', sm: 'inline-flex' },
-                    fontWeight: 600,
-                  }}
-                />
-                <IconButton
-                  onClick={handleMenuOpen}
-                  size="small"
-                  aria-label="User profile menu"
-                >
-                  <Avatar
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      bgcolor: 'secondary.main',
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {(profile?.name || user?.email || 'U').charAt(0).toUpperCase()}
-                  </Avatar>
-                </IconButton>
-
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={handleMenuClose}
-                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                >
-                  <Box sx={{ px: 2, py: 1 }}>
-                    <Typography variant="subtitle2" noWrap fontWeight="700">
-                      {profile?.name || 'Citizen'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap display="block">
-                      {user?.email}
-                    </Typography>
-                  </Box>
-
-                  <Divider />
-
-                  <MenuItem
-                    component={RouterLink}
-                    to="/profile"
-                    onClick={handleMenuClose}
-                    sx={{ gap: 1.25 }}
-                  >
-                    <AccountCircleIcon fontSize="small" color="primary" />
-                    My Profile
-                  </MenuItem>
-
-                  {canAccessDashboard && (
-                    <MenuItem
-                      component={RouterLink}
-                      to="/dashboard"
-                      onClick={handleMenuClose}
-                      sx={{ gap: 1.25 }}
-                    >
-                      <DashboardIcon fontSize="small" color="warning" />
-                      Official Dashboard
-                    </MenuItem>
-                  )}
-
-                  {canAccessAdmin && (
-                    <MenuItem
-                      component={RouterLink}
-                      to="/admin"
-                      onClick={handleMenuClose}
-                      sx={{ gap: 1.25 }}
-                    >
-                      <AdminPanelSettingsIcon fontSize="small" color="error" />
-                      Admin Panel
-                    </MenuItem>
-                  )}
-
-                  <Divider />
-
-                  <MenuItem onClick={handleSignOut} sx={{ color: 'error.main', gap: 1.25 }}>
-                    <LogoutIcon fontSize="small" />
-                    Sign Out
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="outlined"
-                  size="small"
-                >
-                  Log In
-                </Button>
-                <Button
-                  component={RouterLink}
-                  to="/signup"
-                  variant="contained"
-                  size="small"
-                >
-                  Sign Up
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </Toolbar>
-      </Container>
+            </Box>
+          )}
+        </Box>
+      </Toolbar>
     </AppBar>
   );
 };

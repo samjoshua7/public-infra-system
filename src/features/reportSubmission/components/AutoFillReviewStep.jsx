@@ -41,7 +41,8 @@ export const AutoFillReviewStep = ({
           <Chip
             icon={<AutoAwesomeIcon fontSize="small" />}
             label="Auto-filled by AI"
-            color="secondary"
+            color="primary"
+            variant="outlined"
             size="small"
             sx={{ fontWeight: 600 }}
           />
@@ -71,7 +72,7 @@ export const AutoFillReviewStep = ({
             gap: 2,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 2,
+            borderRadius: '4px',
           }}
         >
           <Box

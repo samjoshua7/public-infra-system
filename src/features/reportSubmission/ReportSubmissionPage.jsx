@@ -176,7 +176,7 @@ export const ReportSubmissionPage = () => {
 
   return (
     <Box sx={{ py: 2 }}>
-      <Paper sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 4 }, borderRadius: '6px' }}>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
