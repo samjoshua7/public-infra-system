@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0F172A" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Civic Voice" />
@@ -34,11 +35,33 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch((err) => {
-            console.log('SW registration note:', err);
+        const isLocalDev =
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.port === '5173';
+
+        if (isLocalDev) {
+          // In local dev, unregister any active service workers and clear cache to avoid 503 offline traps
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const registration of registrations) {
+              registration.unregister();
+            }
           });
-        });
+          if ('caches' in window) {
+            caches.keys().then((keys) => {
+              for (const key of keys) {
+                caches.delete(key);
+              }
+            });
+          }
+        } else {
+          // In production, register the service worker for PWA capabilities
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch((err) => {
+              console.log('SW registration note:', err);
+            });
+          });
+        }
       }
     </script>
   </body>
