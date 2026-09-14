@@ -4,6 +4,7 @@ import { DesktopSidebar } from './DesktopSidebar';
 import { AppHeader } from './AppHeader';
 import { MobileTopBar } from './MobileTopBar';
 import { MobileBottomNav } from './MobileBottomNav';
+import { PWAInstallPrompt } from '../pwa/PWAInstallPrompt';
 
 export const AppShell = ({ children }) => {
   return (
@@ -43,6 +44,9 @@ export const AppShell = ({ children }) => {
 
       {/* 4. Mobile Navigation: WhatsApp-Style Bottom Bar */}
       <MobileBottomNav />
+
+      {/* 5. PWA Install Prompt Banner */}
+      <PWAInstallPrompt />
     </Box>
   );
 };
