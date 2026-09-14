@@ -1,72 +1,68 @@
-# HANDOVER.md — Civic Voice Sharp Monochrome Design & Responsive PC/Mobile Navigation
+# HANDOVER.md — Civic Voice Sharp Monochrome Design & Progressive Web App (PWA) Mobile Experience
 
 ## Objective
-1. Completely removed bright blues, pinks, and saturated colors, establishing a sleek, minimalist **Monochrome / Charcoal / Slate design system**.
-2. Standardized all buttons, chips, tags, and inputs to **sharp geometric 4px corners** (`borderRadius: 4px`), eliminating all bubbly/pill curves.
-3. Implemented a dual-audience responsive navigation architecture:
+1. Established a sleek, minimalist **Monochrome / Charcoal / Slate design system** (`#0F172A` in light, `#F8FAFC` in dark) with **sharp geometric 4px corners** on all buttons, chips, and inputs (`borderRadius: 4px`), eliminating all bubbly/pill curves.
+2. Implemented dual-audience responsive navigation architecture:
    - **PC / Desktop Users**: Left fixed sidebar (`DesktopSidebar`, 240px) + Desktop header (`AppHeader`).
    - **Mobile Users**: Sleek compact top bar (`MobileTopBar`, 52px) + WhatsApp-style bottom navigation (`MobileBottomNav`, 56px fixed at bottom).
+3. **App-Based Mobile Experience (PWA)**:
+   - Enabled full PWA capabilities with Web App Manifest (`manifest.json`), service worker (`sw.js`), and scalable vector app icons.
+   - Built a custom installation lifecycle hook (`usePWAInstall.js`) and install prompt card (`PWAInstallPrompt.jsx`) that prompts browser mobile users to install the app to their home screen and app drawer (standalone mode without browser URL bars, Instagram/LinkedIn feel).
 
 ---
 
 ## Decisions Made
-1. **Monochrome Palette (`theme.js`)**:
-   - Primary: Solid Charcoal (`#0F172A` in light, `#F8FAFC` in dark).
-   - Secondary: Slate (`#64748B`).
-   - Surfaces: Light `#F8FAFC`, Dark `#090D14`.
-   - Card/Paper: Light `#FFFFFF`, Dark `#111827`.
-   - Hairline borders: `#E2E8F0` (light) / `#1F2937` (dark).
-2. **Sharp 4px Geometric Corners**:
-   - Buttons: `borderRadius: '4px'`.
-   - Chips & Filter Pills: `borderRadius: '4px'`.
-   - Inputs: `borderRadius: '4px'`.
-   - Cards, Papers & Dialogs: `borderRadius: '6px'`.
-3. **Responsive Navigation Architecture**:
-   - Desktop sidebar (`DesktopSidebar.jsx`) renders on `md`+ with primary action button, main route links, and user identity.
-   - Desktop header (`AppHeader.jsx`) renders at top for desktop users.
-   - Mobile top bar (`MobileTopBar.jsx`) renders compact brand header on `xs` and `sm`.
-   - Mobile bottom nav (`MobileBottomNav.jsx`) renders 5 WhatsApp-style bottom tabs (*Feed*, *Explore*, *Report*, *Activity*, *Profile/Dashboard*) with `position: fixed, bottom: 0`.
+1. **PWA Manifest & Standalone Mode (`manifest.json`)**:
+   - `display: "standalone"`, `start_url: "/feed"`, `theme_color: "#0F172A"`, `background_color: "#0F172A"`.
+   - Scalable SVG icons with maskable support (`icon-192.svg`, `icon-512.svg`, `icon.svg`).
+2. **Service Worker (`sw.js`)**:
+   - Network-first strategy for static app shell caching.
+   - Explicit bypass for Supabase API (`supabase.co`) and Express AI backend (`:5000`) so dynamic data and AI calls are never cached stale.
+3. **Dual Install Mechanism (`usePWAInstall.js` & `PWAInstallPrompt.jsx`)**:
+   - **Android / Chromium**: Listens to `beforeinstallprompt`, triggers native install prompt with one click, updates to standalone state when `appinstalled` fires.
+   - **iOS Safari**: Automatically detects iOS Safari and presents a clear, 2-step visual guide (Share icon → "Add to Home Screen").
+   - **Standalone Detection**: `window.matchMedia('(display-mode: standalone)').matches` or `window.navigator.standalone === true`; automatically suppresses install prompts when already launched as an app.
+   - **Intelligent Dismissal Snooze**: When dismissed via "Not now" or "X", snoozes prompt for 3 days in `localStorage` (`civic_pwa_dismissed_at`).
+4. **Layout Placement**:
+   - On mobile (`xs`, `sm`), the install prompt is fixed at `bottom: 68px`, cleanly clearing the 56px WhatsApp-style `MobileBottomNav`.
+   - On desktop (`md`+), floats unobtrusively at `bottom: 24px, right: 24px`.
+   - Adheres strictly to the sharp 4px/6px monochrome palette.
 
 ---
 
 ## Files Modified & Added
-- [src/app/theme/theme.js](file:///d:/Git/public-infra-system/src/app/theme/theme.js) — Charcoal primary, sharp 4px button overrides, muted semantic status colors.
-- [src/components/layout/AppShell.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppShell.jsx) — Orchestrates desktop sidebar+header vs mobile topbar+bottomnav.
-- [src/components/layout/DesktopSidebar.jsx](file:///d:/Git/public-infra-system/src/components/layout/DesktopSidebar.jsx) — Fixed 240px left sidebar for PC users.
-- [src/components/layout/AppHeader.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppHeader.jsx) — Desktop top bar aligned with sidebar.
-- [src/components/layout/MobileTopBar.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileTopBar.jsx) — Compact 52px top bar for mobile users.
-- [src/components/layout/MobileBottomNav.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileBottomNav.jsx) — Fixed WhatsApp-style bottom nav for mobile users.
-- [src/features/feed/components/CategoryFilterBar.jsx](file:///d:/Git/public-infra-system/src/features/feed/components/CategoryFilterBar.jsx) — Sharp 4px chips, charcoal active state.
-- [src/features/feed/components/ReportCard.jsx](file:///d:/Git/public-infra-system/src/features/feed/components/ReportCard.jsx) — Sharp 4px/6px corners, muted status badges, charcoal link.
-- [src/features/feed/FeedPage.jsx](file:///d:/Git/public-infra-system/src/features/feed/FeedPage.jsx) — Sharp 4px status filter chips with charcoal active state.
-- [src/features/reportDetail/components/ReportDetailContent.jsx](file:///d:/Git/public-infra-system/src/features/reportDetail/components/ReportDetailContent.jsx) — Sharp 4px/6px corners on timeline and comment boxes.
-- [src/features/reportSubmission/ReportSubmissionPage.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/ReportSubmissionPage.jsx) — Sharp 6px paper.
-- [src/features/reportSubmission/components/PhotoCaptureStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/PhotoCaptureStep.jsx) — Sharp 4px paper/dropzone.
-- [src/features/reportSubmission/components/AutoFillReviewStep.jsx](file:///d:/Git/public-infra-system/src/features/reportSubmission/components/AutoFillReviewStep.jsx) — Sharp 4px thumbnail box.
-- [src/features/officialDashboard/OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) — Sharp 6px tables and tabs paper.
-- [src/features/officialDashboard/components/QuickAdvanceDialog.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/components/QuickAdvanceDialog.jsx) — Sharp 6px modal dialog.
-- [src/features/officialDashboard/components/ReportDetailDialog.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/components/ReportDetailDialog.jsx) — Sharp 6px modal dialog.
-- [src/features/officialDashboard/components/StatusUpdateControl.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/components/StatusUpdateControl.jsx) — Sharp 6px paper.
-- [src/features/admin/AdminUsersPage.jsx](file:///d:/Git/public-infra-system/src/features/admin/AdminUsersPage.jsx) — Sharp 6px tables and forms.
-- [src/features/auth/WaitingApprovalPage.jsx](file:///d:/Git/public-infra-system/src/features/auth/WaitingApprovalPage.jsx) — Sharp 6px card.
+- [public/manifest.json](file:///d:/Git/public-infra-system/public/manifest.json) — PWA Manifest specifying standalone display mode and icons.
+- [public/sw.js](file:///d:/Git/public-infra-system/public/sw.js) — Service worker caching app shell and bypassing API calls.
+- [public/icons/icon.svg](file:///d:/Git/public-infra-system/public/icons/icon.svg) — Civic landmark app icon.
+- [public/icons/icon-192.svg](file:///d:/Git/public-infra-system/public/icons/icon-192.svg) — 192x192 app icon.
+- [public/icons/icon-512.svg](file:///d:/Git/public-infra-system/public/icons/icon-512.svg) — 512x512 app icon.
+- [index.html](file:///d:/Git/public-infra-system/index.html) — Manifest link, iOS apple-mobile-web-app tags, service worker registration script.
+- [src/hooks/usePWAInstall.js](file:///d:/Git/public-infra-system/src/hooks/usePWAInstall.js) — Custom hook handling install prompt state, standalone detection, and snooze.
+- [src/components/pwa/PWAInstallPrompt.jsx](file:///d:/Git/public-infra-system/src/components/pwa/PWAInstallPrompt.jsx) — Sharp 4px/6px monochrome install card for Android/Desktop & iOS.
+- [src/components/layout/AppShell.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppShell.jsx) — Mounted `PWAInstallPrompt` in application layout shell.
+- [src/app/theme/theme.js](file:///d:/Git/public-infra-system/src/app/theme/theme.js) — Monochrome Charcoal palette and 4px button overrides.
+- [src/components/layout/DesktopSidebar.jsx](file:///d:/Git/public-infra-system/src/components/layout/DesktopSidebar.jsx) — Fixed 240px sidebar for desktop users.
+- [src/components/layout/MobileTopBar.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileTopBar.jsx) — Sleek 52px top bar for mobile users.
+- [src/components/layout/MobileBottomNav.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileBottomNav.jsx) — WhatsApp-style bottom navigation.
 
 ---
 
 ## Database Changes & Migrations
-- No database changes or SQL migrations were required for this UI refactor.
-- Database schema, triggers, and RLS policies remain authoritative.
+- None. Database schema, triggers, and RLS policies remain untouched.
 
 ## APIs Changed (Supabase + Express)
-- No public API contracts or Express endpoints were changed.
+- None. Public API contracts and Express AI backend remain unchanged.
 
 ---
 
 ## Remaining TODOs (Priority Order)
-1. Verify tap target comfort on physical mobile screens for the bottom nav bar.
-2. Add end-to-end tests for citizen report flow and official status transitions.
+1. In physical Android device or Chrome DevTools Application tab, test `beforeinstallprompt` simulation.
+2. In iOS Safari on a mobile device, verify that the 2-step "Add to Home Screen" instructions display clearly.
+3. Test offline behavior in service worker when disconnected from WiFi.
 
 ## Known Risks
-- Hard browser refresh (`Ctrl + F5`) may be required if old styles or cached bundles are preserved in the browser.
+- On Chrome Desktop, `beforeinstallprompt` only fires if the site passes PWA installability criteria (manifest + service worker with fetch handler), which are now both satisfied.
+- In Incognito / Private browsing modes, browsers typically do not fire `beforeinstallprompt`.
 
 ## Exact Next Task for Following Coding Agent
-- Verify mobile view by opening devtools device toolbar (< 900px) and switching tabs in the bottom navigation (*Feed*, *Explore*, *Report*, *Activity*, *Profile*).
+- Open Chrome DevTools -> Application tab -> Manifest & Service Workers to inspect the active service worker status and test triggering the install banner.
