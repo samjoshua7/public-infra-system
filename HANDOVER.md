@@ -1,72 +1,60 @@
-# HANDOVER.md — Civic Voice Sharp Monochrome Design, PWA Mobile Experience & Dev Stability
+# HANDOVER.md — Civic Voice Brand Logo Integration, Direct Comments, & Traffic Light Image Resolution
 
 ## Objective
-1. Established a sleek, minimalist **Monochrome / Charcoal / Slate design system** (`#0F172A` in light, `#F8FAFC` in dark) with **sharp geometric 4px corners** on all buttons, chips, and inputs (`borderRadius: 4px`), eliminating all bubbly/pill curves.
-2. Implemented dual-audience responsive navigation architecture:
-   - **PC / Desktop Users**: Left fixed sidebar (`DesktopSidebar`, 240px) + Desktop header (`AppHeader`).
-   - **Mobile Users**: Sleek compact top bar (`MobileTopBar`, 52px) + WhatsApp-style bottom navigation (`MobileBottomNav`, 56px fixed at bottom).
-3. **App-Based Mobile Experience (PWA)**:
-   - Enabled full PWA capabilities with Web App Manifest (`manifest.json`), service worker (`sw.js`), and scalable vector app icons.
-   - Built a custom installation lifecycle hook (`usePWAInstall.js`) and install prompt card (`PWAInstallPrompt.jsx`) that prompts browser mobile users to install the app to their home screen and app drawer (standalone mode without browser URL bars, Instagram/LinkedIn feel).
-4. **Stability, Watcher Hardening & Performance**:
-   - Resolved the `EBUSY` file watcher crash on Windows by configuring `server.watch.ignored` in `vite.config.js`.
-   - Prevented false `503 (Offline)` traps during development by isolating `sw.js` and actively unregistering service workers on `localhost`.
-   - Added standard `<meta name="mobile-web-app-capable" content="yes" />` in `index.html`.
-   - Optimized SVG icons by 99.7% (from 1.4 MB down to ~5 KB).
+1. **Brand Logo Integration**:
+   - Deployed high-resolution master asset (`public/logo.png`) and generated bicubic resized variants (`public/favicon.png`, `public/icons/icon-192.png`, `public/icons/icon-512.png`).
+   - Integrated logo across `DesktopSidebar.jsx`, `MobileTopBar.jsx`, `LoginPage.jsx`, `SignupPage.jsx`, `PWAInstallPrompt.jsx`, `index.html`, and `manifest.json`.
+2. **Public Feed Direct Comment Navigation**:
+   - Updated the comment button on each feed post (`ReportCard.jsx`) to directly route to the report's "View Details & Timeline" page (`/report/:id#comments`).
+   - Enhanced `ReportDetailContent.jsx` with an authoritative `#comments` anchor container (`scrollMarginTop: 80px`), auto-smooth-scroll on navigation, and automatic focus on the comment text input (`#comment-input`).
+3. **Traffic Light Page & Image Fix**:
+   - Resolved the 404 broken image link on the Traffic Light report.
+   - Saved local static high-resolution assets directly in `public/images/`:
+     - `public/images/traffic_light.jpg`
+     - `public/images/pothole.jpg`
+     - `public/images/streetlight.jpg`
+     - `public/images/garbage.jpg`
+   - Added robust `onError` image fallback handling across `ReportCard.jsx`, `ReportDetailContent.jsx`, and `ExplorePage.jsx` so broken remote image links automatically recover without rendering broken icons.
+   - Enhanced `src/features/reportDetail/api.js` to seamlessly resolve demo reports and timelines without triggering Postgres UUID format errors.
 
 ---
 
 ## Decisions Made
-1. **Vite Watcher Hardening (`vite.config.js`)**:
-   - Added ignore patterns for Windows copy files (`**/* - Copy.*`, `**/*.tmp`, `**/*.log`, etc.) so transient file locks never crash Node.js.
-   - Pre-bundled `@mui/icons-material` and the new PWA action icons (`GetApp`, `IosShare`, `AddBoxOutlined`, `CheckCircleOutline`) to eliminate mid-session re-optimization reloads.
-2. **Service Worker Isolation (`public/sw.js` & `index.html`)**:
-   - `sw.js` explicitly bypasses all requests from `localhost`, `127.0.0.1`, `/src/**`, `/@**`, and module scripts.
-   - `index.html` detects `localhost` / `127.0.0.1` and automatically calls `navigator.serviceWorker.getRegistrations()` to unregister any stale workers, guaranteeing that local dev and Vite HMR are 100% direct and unhindered.
-3. **PWA Manifest & Standalone Mode (`manifest.json`)**:
-   - `display: "standalone"`, `start_url: "/feed"`, `theme_color: "#0F172A"`, `background_color: "#0F172A"`.
-   - Scalable, lightweight SVG icons (`icon.svg`, `icon-192.svg`, `icon-512.svg`).
-4. **Dual Install Mechanism (`usePWAInstall.js` & `PWAInstallPrompt.jsx`)**:
-   - **Android / Chromium**: Listens to `beforeinstallprompt`, triggers native install prompt with one click.
-   - **iOS Safari**: Automatically detects iOS Safari and presents a clear, 2-step visual guide (Share icon → "Add to Home Screen").
-   - **Standalone Detection**: Automatically suppresses install prompts when already launched in standalone mode.
-   - **Intelligent Dismissal Snooze**: Snoozes prompt for 3 days in `localStorage` (`civic_pwa_dismissed_at`).
+1. **Local Static Assets for Demo Reports**:
+   - Replaced external Unsplash CDN URLs in `demoReports.js` with direct local assets under `/images/`. This prevents 404 network failures and allows the app to function offline.
+2. **Universal Image Fallbacks**:
+   - Added `onError` event listeners on all `CardMedia` and `img` components to automatically substitute category-appropriate local images if any photo URL fails to load.
 
 ---
 
 ## Files Modified & Added
-- [vite.config.js](file:///d:/Git/public-infra-system/vite.config.js) — Windows watcher ignore configuration and icon pre-bundling.
-- [public/sw.js](file:///d:/Git/public-infra-system/public/sw.js) — Bypass dev/module requests and eliminate synthetic 503 errors.
-- [index.html](file:///d:/Git/public-infra-system/index.html) — Standard `mobile-web-app-capable` meta tag and dev SW auto-unregistration.
-- [public/icons/icon.svg](file:///d:/Git/public-infra-system/public/icons/icon.svg) — Lightweight 2 KB civic landmark icon.
-- [public/icons/icon-192.svg](file:///d:/Git/public-infra-system/public/icons/icon-192.svg) — Lightweight 1.3 KB 192x192 icon.
-- [public/icons/icon-512.svg](file:///d:/Git/public-infra-system/public/icons/icon-512.svg) — Lightweight 2 KB 512x512 icon.
-- [public/manifest.json](file:///d:/Git/public-infra-system/public/manifest.json) — PWA Manifest specifying standalone display mode and icons.
-- [src/hooks/usePWAInstall.js](file:///d:/Git/public-infra-system/src/hooks/usePWAInstall.js) — Custom hook handling install prompt state, standalone detection, and snooze.
-- [src/components/pwa/PWAInstallPrompt.jsx](file:///d:/Git/public-infra-system/src/components/pwa/PWAInstallPrompt.jsx) — Sharp 4px/6px monochrome install card for Android/Desktop & iOS.
-- [src/components/layout/AppShell.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppShell.jsx) — Mounted `PWAInstallPrompt` in application layout shell.
-- [src/app/theme/theme.js](file:///d:/Git/public-infra-system/src/app/theme/theme.js) — Monochrome Charcoal palette and 4px button overrides.
-- [src/components/layout/DesktopSidebar.jsx](file:///d:/Git/public-infra-system/src/components/layout/DesktopSidebar.jsx) — Fixed 240px sidebar for desktop users.
-- [src/components/layout/MobileTopBar.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileTopBar.jsx) — Sleek 52px top bar for mobile users.
-- [src/components/layout/MobileBottomNav.jsx](file:///d:/Git/public-infra-system/src/components/layout/MobileBottomNav.jsx) — WhatsApp-style bottom navigation.
+- [public/images/traffic_light.jpg](file:///d:/git/public-infra-system/public/images/traffic_light.jpg) — High-res pedestrian traffic signal photo.
+- [public/images/pothole.jpg](file:///d:/git/public-infra-system/public/images/pothole.jpg) — Road pothole photo.
+- [public/images/streetlight.jpg](file:///d:/git/public-infra-system/public/images/streetlight.jpg) — Streetlight photo.
+- [public/images/garbage.jpg](file:///d:/git/public-infra-system/public/images/garbage.jpg) — Public waste photo.
+- [src/features/feed/demoReports.js](file:///d:/git/public-infra-system/src/features/feed/demoReports.js) — Updated demo reports to use `/images/` static assets.
+- [src/features/feed/components/ReportCard.jsx](file:///d:/git/public-infra-system/src/features/feed/components/ReportCard.jsx) — Added `onError` image fallback and direct `#comments` routing.
+- [src/features/reportDetail/components/ReportDetailContent.jsx](file:///d:/git/public-infra-system/src/features/reportDetail/components/ReportDetailContent.jsx) — Added `onError` image fallback, `#comments` scroll, and input auto-focus.
+- [src/features/explore/ExplorePage.jsx](file:///d:/git/public-infra-system/src/features/explore/ExplorePage.jsx) — Added `onError` image fallback.
+- [src/features/reportDetail/api.js](file:///d:/git/public-infra-system/src/features/reportDetail/api.js) — Resilient demo report fallback support.
+- [public/logo.png](file:///d:/git/public-infra-system/public/logo.png) — Master logo.
 
 ---
 
 ## Database Changes & Migrations
-- None. Database schema, triggers, and RLS policies remain untouched.
+- None.
 
 ## APIs Changed (Supabase + Express)
-- None. Public API contracts and Express AI backend remain unchanged.
+- None.
 
 ---
 
 ## Remaining TODOs (Priority Order)
-1. User restarts Vite dev server: `npm run dev`.
-2. Refresh `http://localhost:5173` to verify that service worker unregisters and Vite HMR connects cleanly.
-3. Test PWA install prompt in Chrome DevTools mobile emulation.
+1. Verify in browser at `http://localhost:5173`:
+   - Inspect the Traffic Light card: verify the image renders clearly in the feed, in explore view, and in the detail page.
 
 ## Known Risks
-- If a browser window still has the previous Service Worker active in memory, a single hard refresh (`Ctrl + F5`) triggers the new `index.html` logic which immediately unregisters it and clears the cache.
+- None.
 
 ## Exact Next Task for Following Coding Agent
-- Confirm dev server is running on `http://localhost:5173` and verify that the console has zero warnings or 503 errors.
+- Continue building or refining features according to ROADMAP.md Phase 1/Phase 2 milestones.

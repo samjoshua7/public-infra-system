@@ -113,16 +113,18 @@ export const DesktopSidebar = () => {
           }}
         >
           <Avatar
+            src="/logo.png"
+            alt="Civic Voice Logo"
+            variant="rounded"
             sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              width: 32,
-              height: 32,
-              borderRadius: 1,
+              width: 36,
+              height: 36,
+              borderRadius: 1.5,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
             }}
-          >
-            <LocationCityIcon sx={{ fontSize: 18 }} />
-          </Avatar>
+          />
           <Typography
             variant="h6"
             sx={{

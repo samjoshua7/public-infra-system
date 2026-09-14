@@ -42,6 +42,14 @@ const categoryLabels = {
   other: 'Other',
 };
 
+const categoryFallbackImages = {
+  pothole: '/images/pothole.jpg',
+  streetlight: '/images/streetlight.jpg',
+  traffic_light: '/images/traffic_light.jpg',
+  garbage: '/images/garbage.jpg',
+  other: '/images/pothole.jpg',
+};
+
 export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpdated, onReportDeleted }) => {
   const { mode } = useThemeMode();
   const { user, role } = useAuth();
@@ -200,14 +208,22 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
         <Box sx={{ position: 'relative', width: '100%', bgcolor: 'background.default' }}>
           <CardMedia
             component="img"
-            image={report.photo_url}
+            image={report.photo_url || categoryFallbackImages[report.category] || '/images/traffic_light.jpg'}
             alt={report.title}
             loading="lazy"
+            onError={(e) => {
+              const fallback = categoryFallbackImages[report.category] || '/images/traffic_light.jpg';
+              if (e.currentTarget.src !== fallback) {
+                e.currentTarget.src = fallback;
+              }
+            }}
             sx={{
               width: '100%',
               maxHeight: 400,
+              minHeight: 220,
               objectFit: 'cover',
               display: 'block',
+              bgcolor: 'background.default',
             }}
           />
 
@@ -326,24 +342,40 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
               </Box>
             </Tooltip>
 
-            <Box
-              component={RouterLink}
-              to={`/report/${report.report_id}`}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                textDecoration: 'none',
-                color: 'inherit',
-                ml: 1,
-              }}
-            >
-              <IconButton size="small" color="inherit" component="span" aria-label="View comments">
-                <ChatBubbleOutlineIcon fontSize="small" />
-              </IconButton>
-              <Typography variant="caption" fontWeight="600" color="text.secondary" sx={{ ml: 0.25 }}>
-                {report.comment_count || 0}
-              </Typography>
-            </Box>
+            <Tooltip title="View comments in report details">
+              <Box
+                component={RouterLink}
+                to={`/report/${report.report_id}#comments`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  ml: 1,
+                  borderRadius: '4px',
+                  py: 0.25,
+                  px: 0.75,
+                  transition: 'all 0.15s ease',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  component="span"
+                  aria-label="View comments"
+                  sx={{ p: 0.25 }}
+                >
+                  <ChatBubbleOutlineIcon fontSize="small" />
+                </IconButton>
+                <Typography variant="caption" fontWeight="600" color="text.secondary" sx={{ ml: 0.5 }}>
+                  {report.comment_count || 0}
+                </Typography>
+              </Box>
+            </Tooltip>
           </Box>
 
           <Typography

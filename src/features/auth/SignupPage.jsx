@@ -69,12 +69,28 @@ export const SignupPage = () => {
     >
       <Card sx={{ maxWidth: 420, width: '100%', p: 2 }}>
         <CardContent>
-          <Typography variant="h5" component="h1" gutterBottom fontWeight="700">
-            Create an Account
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Join Civic Voice in identifying and resolving public infrastructure issues across your community.
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2.5, textAlign: 'center' }}>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Civic Voice"
+              sx={{
+                width: 68,
+                height: 68,
+                borderRadius: '50%',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                border: '2px solid',
+                borderColor: 'divider',
+                mb: 1.5,
+              }}
+            />
+            <Typography variant="h5" component="h1" fontWeight="700">
+              Create an Account
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Join Civic Voice in identifying and resolving public infrastructure issues across your community.
+            </Typography>
+          </Box>
 
           <ErrorAlert message={error} />
 

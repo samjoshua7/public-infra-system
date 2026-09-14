@@ -17,7 +17,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -58,6 +58,14 @@ const categoryLabels = {
   other: 'Other',
 };
 
+const categoryFallbackImages = {
+  pothole: '/images/pothole.jpg',
+  streetlight: '/images/streetlight.jpg',
+  traffic_light: '/images/traffic_light.jpg',
+  garbage: '/images/garbage.jpg',
+  other: '/images/pothole.jpg',
+};
+
 export const ReportDetailContent = ({
   reportId,
   showBackToFeed = false,
@@ -65,6 +73,7 @@ export const ReportDetailContent = ({
   onDeleteSuccess = null,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, role, isAuthenticated } = useAuth();
   const { mode } = useThemeMode();
 
@@ -115,6 +124,30 @@ export const ReportDetailContent = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Smooth scroll to comments if URL has #comments
+  useEffect(() => {
+    const isCommentsTarget = location.hash === '#comments' || window.location.hash === '#comments';
+    if (!loading && report && isCommentsTarget) {
+      const scrollToComments = () => {
+        const el = document.getElementById('comments');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const input = document.getElementById('comment-input');
+          if (input) {
+            input.focus({ preventScroll: true });
+          }
+        }
+      };
+
+      const t1 = setTimeout(scrollToComments, 100);
+      const t2 = setTimeout(scrollToComments, 400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [loading, report, location.hash]);
 
   const handleStatusUpdateCallback = () => {
     loadData();
@@ -289,11 +322,18 @@ export const ReportDetailContent = ({
         <Box sx={{ position: 'relative', width: '100%', maxHeight: 450, overflow: 'hidden', bgcolor: 'black' }}>
           <Box
             component="img"
-            src={report.photo_url}
+            src={report.photo_url || categoryFallbackImages[report.category] || '/images/traffic_light.jpg'}
             alt={report.title}
+            onError={(e) => {
+              const fallback = categoryFallbackImages[report.category] || '/images/traffic_light.jpg';
+              if (e.currentTarget.src !== fallback) {
+                e.currentTarget.src = fallback;
+              }
+            }}
             sx={{
               width: '100%',
               maxHeight: 450,
+              minHeight: 240,
               objectFit: 'contain',
               display: 'block',
               mx: 'auto',
@@ -398,7 +438,30 @@ export const ReportDetailContent = ({
               </Button>
             </Tooltip>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+            <Box
+              component="a"
+              href="#comments"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('comment-input')?.focus();
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                color: 'text.secondary',
+                textDecoration: 'none',
+                cursor: 'pointer',
+                p: '4px 8px',
+                borderRadius: '4px',
+                transition: 'all 0.15s ease',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                  color: 'primary.main',
+                },
+              }}
+            >
               <ChatBubbleOutlineIcon fontSize="small" />
               <Typography variant="body2" fontWeight="600">
                 {report.comment_count} Comments
@@ -472,7 +535,14 @@ export const ReportDetailContent = ({
       </Paper>
 
       {/* Community Comments Section */}
-      <Paper sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: '6px' }}>
+      <Paper
+        id="comments"
+        sx={{
+          p: { xs: 2.5, sm: 4 },
+          borderRadius: '6px',
+          scrollMarginTop: '80px',
+        }}
+      >
         <Typography variant="h6" fontWeight="700" gutterBottom>
           Community Comments ({comments.length})
         </Typography>
@@ -481,6 +551,7 @@ export const ReportDetailContent = ({
         {isAuthenticated ? (
           <Box component="form" onSubmit={handleAddComment} sx={{ mb: 4, mt: 2 }}>
             <TextField
+              id="comment-input"
               fullWidth
               multiline
               rows={2}

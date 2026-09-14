@@ -11,7 +11,7 @@ export const DEMO_REPORTS = [
     is_hidden: false,
     like_count: 34,
     comment_count: 8,
-    photo_url: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=1200&q=80',
+    photo_url: '/images/pothole.jpg',
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
     users: {
       name: 'alex_turner',
@@ -30,7 +30,7 @@ export const DEMO_REPORTS = [
     is_hidden: false,
     like_count: 52,
     comment_count: 14,
-    photo_url: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=1200&q=80',
+    photo_url: '/images/streetlight.jpg',
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
     users: {
       name: 'sarah_civic',
@@ -49,7 +49,7 @@ export const DEMO_REPORTS = [
     is_hidden: false,
     like_count: 89,
     comment_count: 21,
-    photo_url: 'https://images.unsplash.com/photo-1508873696983-2df5703bc20d?auto=format&fit=crop&w=1200&q=80',
+    photo_url: '/images/traffic_light.jpg?v=2',
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     users: {
       name: 'marcus_chen',
@@ -68,7 +68,7 @@ export const DEMO_REPORTS = [
     is_hidden: false,
     like_count: 41,
     comment_count: 6,
-    photo_url: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=1200&q=80',
+    photo_url: '/images/garbage.jpg',
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
     users: {
       name: 'elena_rodriguez',

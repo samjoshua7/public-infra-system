@@ -78,16 +78,18 @@ export const MobileTopBar = () => {
           }}
         >
           <Avatar
+            src="/logo.png"
+            alt="Civic Voice Logo"
+            variant="rounded"
             sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              width: 28,
-              height: 28,
-              borderRadius: 0.75,
+              width: 32,
+              height: 32,
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             }}
-          >
-            <LocationCityIcon sx={{ fontSize: 16 }} />
-          </Avatar>
+          />
           <Typography
             variant="subtitle1"
             sx={{
