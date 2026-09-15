@@ -16,6 +16,8 @@ import {
   MenuItem,
   FormControl,
   Chip,
+  Checkbox,
+  ListItemText,
   Pagination,
   Avatar,
   Alert,
@@ -37,12 +39,30 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SaveIcon from '@mui/icons-material/Save';
 
-import { listUsers, updateUserRole, updateUserApprovalStatus } from './api';
+import { listUsers, updateUserRole, updateUserApprovalStatus, updateUserDepartments } from './api';
 import { getAppSettings, updateAppSettings } from '../settings/api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 import { useAuth } from '../../hooks/useAuth';
+
+const DEPARTMENT_OPTIONS = [
+  { value: 'all', label: '⭐ All Departments (Super Official)' },
+  { value: 'pothole', label: 'Pothole' },
+  { value: 'streetlight', label: 'Streetlight' },
+  { value: 'traffic_light', label: 'Traffic Light' },
+  { value: 'garbage', label: 'Garbage' },
+  { value: 'other', label: 'Other' },
+];
+
+const DEPARTMENT_LABELS = {
+  all: 'All Depts',
+  pothole: 'Pothole',
+  streetlight: 'Streetlight',
+  traffic_light: 'Traffic Light',
+  garbage: 'Garbage',
+  other: 'Other',
+};
 
 export const AdminUsersPage = () => {
   const { user: currentUser, refreshProfile } = useAuth();
@@ -125,7 +145,15 @@ export const AdminUsersPage = () => {
     try {
       const updated = await updateUserRole(userId, newRole);
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u))
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                role: updated.role,
+                assigned_departments: updated.assigned_departments || u.assigned_departments,
+              }
+            : u
+        )
       );
       setToast({
         open: true,
@@ -138,6 +166,48 @@ export const AdminUsersPage = () => {
       setToast({
         open: true,
         message: err.message || 'Failed to update user role.',
+        severity: 'error',
+      });
+      loadUsers();
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDepartmentChange = async (userId, targetEmail, selectedValues, prevValues = []) => {
+    let newDepartments = [];
+    const hadAll = prevValues.includes('all');
+    const hasAll = selectedValues.includes('all');
+
+    if (!hadAll && hasAll) {
+      newDepartments = ['all'];
+    } else if (hadAll && selectedValues.length > 1) {
+      newDepartments = selectedValues.filter((v) => v !== 'all');
+    } else if (hasAll && selectedValues.length === 1) {
+      newDepartments = ['all'];
+    } else {
+      newDepartments = selectedValues.filter((v) => v !== 'all');
+    }
+
+    setUpdatingUserId(userId);
+    try {
+      const updated = await updateUserDepartments(userId, newDepartments);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, assigned_departments: updated.assigned_departments } : u
+        )
+      );
+      setToast({
+        open: true,
+        message: `Updated departments for ${targetEmail}`,
+        severity: 'success',
+      });
+      if (userId === currentUser?.id) await refreshProfile();
+    } catch (err) {
+      console.error('Department update failed:', err);
+      setToast({
+        open: true,
+        message: err.message || 'Failed to update departments.',
         severity: 'error',
       });
       loadUsers();
@@ -308,6 +378,10 @@ export const AdminUsersPage = () => {
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 700 }}>
+                        Department
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 700 }}>
                         <TableSortLabel
                           active={sortBy === 'approval_status'}
                           direction={sortBy === 'approval_status' ? sortOrder : 'asc'}
@@ -360,6 +434,87 @@ export const AdminUsersPage = () => {
                           </TableCell>
 
                           <TableCell>{getRoleBadge(u.role)}</TableCell>
+
+                          <TableCell>
+                            {u.role === 'ADMIN' ? (
+                              <Chip
+                                size="small"
+                                label="All Departments"
+                                color="secondary"
+                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}
+                              />
+                            ) : u.role === 'GOVERNMENT_OFFICIAL' ? (
+                              <FormControl size="small" sx={{ minWidth: 150, maxWidth: 220 }}>
+                                <Select
+                                  multiple
+                                  value={u.assigned_departments || []}
+                                  onChange={(e) =>
+                                    handleDepartmentChange(
+                                      u.id,
+                                      u.email,
+                                      e.target.value,
+                                      u.assigned_departments || []
+                                    )
+                                  }
+                                  disabled={updatingUserId === u.id}
+                                  displayEmpty
+                                  renderValue={(selected) => {
+                                    if (!selected || selected.length === 0) {
+                                      return (
+                                        <Typography
+                                          variant="caption"
+                                          color="error.main"
+                                          fontWeight={600}
+                                        >
+                                          None Assigned
+                                        </Typography>
+                                      );
+                                    }
+                                    if (selected.includes('all')) {
+                                      return (
+                                        <Chip
+                                          size="small"
+                                          color="primary"
+                                          label="⭐ All Depts"
+                                          sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700 }}
+                                        />
+                                      );
+                                    }
+                                    return (
+                                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {selected.map((val) => (
+                                          <Chip
+                                            key={val}
+                                            size="small"
+                                            label={DEPARTMENT_LABELS[val] || val}
+                                            sx={{ height: 20, fontSize: '0.7rem' }}
+                                          />
+                                        ))}
+                                      </Box>
+                                    );
+                                  }}
+                                  sx={{ fontSize: '0.85rem' }}
+                                >
+                                  {DEPARTMENT_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>
+                                      <Checkbox
+                                        checked={(u.assigned_departments || []).includes(opt.value)}
+                                        size="small"
+                                      />
+                                      <ListItemText
+                                        primary={opt.label}
+                                        primaryTypographyProps={{ fontSize: '0.85rem' }}
+                                      />
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                —
+                              </Typography>
+                            )}
+                          </TableCell>
 
                           <TableCell>{getApprovalBadge(u.approval_status)}</TableCell>
 

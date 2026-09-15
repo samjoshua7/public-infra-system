@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabaseClient';
  */
 export const listReportsForOfficial = async ({
   status = 'all',
+  category = 'all',
+  assignedDepartments = null,
   page = 1,
   pageSize = 10,
   sortBy = 'created_at',
@@ -46,6 +48,16 @@ export const listReportsForOfficial = async ({
     query = query.eq('status', status);
   }
 
+  if (category === 'my_departments' && assignedDepartments && !assignedDepartments.includes('all')) {
+    if (assignedDepartments.length === 0) {
+      query = query.in('category', ['__none__']);
+    } else {
+      query = query.in('category', assignedDepartments);
+    }
+  } else if (category && category !== 'all' && category !== 'my_departments') {
+    query = query.eq('category', category);
+  }
+
   const { data, error, count } = await query;
   if (error) throw error;
 
@@ -75,11 +87,20 @@ export const updateReportStatus = async (reportId, newStatus, note = '') => {
  * Fetch overall statistics for the Official Dashboard.
  * Aggregates reports by category and status.
  */
-export const getDashboardStats = async () => {
-  const { data, error } = await supabase
+export const getDashboardStats = async (assignedDepartments = null) => {
+  let query = supabase
     .from('issue_reports')
     .select('status, category, created_at');
 
+  if (assignedDepartments && !assignedDepartments.includes('all')) {
+    if (assignedDepartments.length === 0) {
+      query = query.in('category', ['__none__']);
+    } else {
+      query = query.in('category', assignedDepartments);
+    }
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const totalReports = data.length;

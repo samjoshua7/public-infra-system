@@ -19,7 +19,7 @@ export const listUsers = async ({
 
   const { data, error, count } = await supabase
     .from('users')
-    .select('id, name, email, role, approval_status, active, created_at', { count: 'exact' })
+    .select('id, name, email, role, approval_status, active, created_at, assigned_departments', { count: 'exact' })
     .order(sortCol, { ascending })
     .range(from, to);
 
@@ -36,11 +36,23 @@ export const listUsers = async ({
  * Update user role. Protected by DB trigger trg_users_enforce_role_change (admin-only).
  */
 export const updateUserRole = async (userId, newRole) => {
+  const updatePayload = { role: newRole };
+  // If promoting to GOVERNMENT_OFFICIAL and no departments assigned yet, default to all
+  const { data: currentUser } = await supabase
+    .from('users')
+    .select('assigned_departments')
+    .eq('id', userId)
+    .single();
+
+  if (newRole === 'GOVERNMENT_OFFICIAL' && (!currentUser?.assigned_departments || currentUser.assigned_departments.length === 0)) {
+    updatePayload.assigned_departments = ['all'];
+  }
+
   const { data, error } = await supabase
     .from('users')
-    .update({ role: newRole })
+    .update(updatePayload)
     .eq('id', userId)
-    .select('id, name, email, role, approval_status, active, created_at')
+    .select('id, name, email, role, approval_status, active, created_at, assigned_departments')
     .single();
 
   if (error) throw error;
@@ -55,7 +67,23 @@ export const updateUserApprovalStatus = async (userId, newApprovalStatus) => {
     .from('users')
     .update({ approval_status: newApprovalStatus })
     .eq('id', userId)
-    .select('id, name, email, role, approval_status, active, created_at')
+    .select('id, name, email, role, approval_status, active, created_at, assigned_departments')
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Update user assigned departments (admin-only).
+ * departments: array of strings e.g. ['all'] or ['pothole', 'garbage']
+ */
+export const updateUserDepartments = async (userId, departments) => {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ assigned_departments: departments })
+    .eq('id', userId)
+    .select('id, name, email, role, approval_status, active, created_at, assigned_departments')
     .single();
 
   if (error) throw error;

@@ -9,11 +9,14 @@ export const useAuth = () => {
   const isPending = role === 'CITIZEN' && approvalStatus === 'pending';
   const isRejected = role === 'CITIZEN' && approvalStatus === 'rejected';
 
+  const assignedDepartments = profile?.assigned_departments || [];
+
   return {
     session,
     user,
     profile,
     role,
+    assignedDepartments,
     approvalStatus,
     isApproved,
     isPending,

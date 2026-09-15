@@ -17,6 +17,9 @@ import {
   Pagination,
   Avatar,
   Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -26,6 +29,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LockIcon from '@mui/icons-material/Lock';
 
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
 import { getPrivacyDisplay } from '../../lib/privacyUtils';
 import { listReportsForOfficial } from './api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
@@ -51,10 +55,12 @@ const categoryLabels = {
 
 export const OfficialReportsPage = () => {
   const { user: currentUser } = useAuth();
+  const { role, assignedDepartments, isSuperOfficial, canManageCategory } = usePermissions();
   const [reports, setReports] = useState([]);
   const [statusTab, setStatusTab] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -75,6 +81,8 @@ export const OfficialReportsPage = () => {
     try {
       const data = await listReportsForOfficial({
         status: statusTab,
+        category: categoryFilter,
+        assignedDepartments,
         page,
         pageSize,
         sortBy,
@@ -89,7 +97,7 @@ export const OfficialReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusTab, page, pageSize, sortBy, sortOrder]);
+  }, [statusTab, categoryFilter, assignedDepartments, page, pageSize, sortBy, sortOrder]);
 
   useEffect(() => {
     loadOfficialReports();
@@ -157,6 +165,71 @@ export const OfficialReportsPage = () => {
           ))}
         </Tabs>
       </Paper>
+
+      {/* Scope & Department Filter Bar */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2.5,
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+            Your Department Scope:
+          </Typography>
+          {isSuperOfficial ? (
+            <Chip
+              label="⭐ All Departments (Super Official)"
+              size="small"
+              color="primary"
+              sx={{ fontWeight: 700 }}
+            />
+          ) : assignedDepartments.length > 0 ? (
+            assignedDepartments.map((dept) => (
+              <Chip
+                key={dept}
+                label={categoryLabels[dept] || dept}
+                size="small"
+                color="secondary"
+                sx={{ fontWeight: 600 }}
+              />
+            ))
+          ) : (
+            <Chip
+              label="No Departments Assigned (Read Only)"
+              size="small"
+              color="error"
+              sx={{ fontWeight: 600 }}
+            />
+          )}
+        </Box>
+
+        <FormControl size="small" sx={{ minWidth: 190 }}>
+          <Select
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setPage(1);
+            }}
+            displayEmpty
+            sx={{ fontSize: '0.875rem', fontWeight: 600 }}
+          >
+            <MenuItem value="all">All Categories</MenuItem>
+            {!isSuperOfficial && assignedDepartments.length > 0 && (
+              <MenuItem value="my_departments">🎯 My Assigned Depts Only</MenuItem>
+            )}
+            {Object.entries(categoryLabels).map(([catKey, catLabel]) => (
+              <MenuItem key={catKey} value={catKey}>
+                {catLabel}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       {/* Content */}
       <ErrorAlert message={error} onRetry={loadOfficialReports} />
@@ -387,20 +460,34 @@ export const OfficialReportsPage = () => {
                       <TableCell align="right" sx={{ py: 1 }} onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
                           {r.status !== 'finished' && (
-                            <Tooltip title={`Advance to ${nextStatusLabel}`}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  color={STATUS_COLORS[nextStatus] || 'primary'}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setQuickAdvanceReport(r);
-                                  }}
-                                >
-                                  <ArrowForwardIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
+                            canManageCategory(r.category) ? (
+                              <Tooltip title={`Advance to ${nextStatusLabel}`}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color={STATUS_COLORS[nextStatus] || 'primary'}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setQuickAdvanceReport(r);
+                                    }}
+                                  >
+                                    <ArrowForwardIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title={`Restricted: Only officials in ${categoryLabels[r.category] || r.category} department can advance status`}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled
+                                    sx={{ opacity: 0.35 }}
+                                  >
+                                    <ArrowForwardIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )
                           )}
 
                           <Tooltip title="View Details">

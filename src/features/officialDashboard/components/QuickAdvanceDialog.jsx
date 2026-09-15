@@ -20,6 +20,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { updateReportStatus } from '../api';
+import { usePermissions } from '../../../hooks/usePermissions';
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -28,12 +29,14 @@ import {
 } from '../../../lib/reportStatus';
 
 export const QuickAdvanceDialog = ({ report, open, onClose, onStatusUpdated }) => {
+  const { canManageCategory } = usePermissions();
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   if (!report) return null;
 
+  const canManage = canManageCategory(report.category);
   const currentStatus = report.status;
   const nextStatus = getNextStatus(currentStatus);
   const nextStatusLabel = getNextStatusLabel(currentStatus);
@@ -57,6 +60,10 @@ export const QuickAdvanceDialog = ({ report, open, onClose, onStatusUpdated }) =
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canManage) {
+      setError('You are not authorized to update reports in this department.');
+      return;
+    }
     if (!nextStatus || !report.report_id || isCommentEmpty) return;
 
     setSubmitting(true);

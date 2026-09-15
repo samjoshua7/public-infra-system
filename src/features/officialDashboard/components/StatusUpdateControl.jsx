@@ -22,8 +22,8 @@ import {
   getNextStatusLabel,
 } from '../../../lib/reportStatus';
 
-export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }) => {
-  const { canUpdateStatus } = usePermissions();
+export const StatusUpdateControl = ({ reportId, currentStatus, category, onStatusUpdated }) => {
+  const { canUpdateStatus, canManageCategory } = usePermissions();
 
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +31,7 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
 
   if (!canUpdateStatus) return null;
 
+  const canManage = category ? canManageCategory(category) : true;
   const nextStatus = getNextStatus(currentStatus);
   const nextStatusLabel = getNextStatusLabel(currentStatus);
   const currentStatusLabel = STATUS_LABELS[currentStatus] || currentStatus;
@@ -53,6 +54,10 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!canManage) {
+      setError('You are not authorized to update reports in this department.');
+      return;
+    }
     if (!nextStatus || !reportId || isCommentEmpty) return;
 
     setSubmitting(true);
@@ -104,7 +109,11 @@ export const StatusUpdateControl = ({ reportId, currentStatus, onStatusUpdated }
         </Alert>
       )}
 
-      {currentStatus === 'finished' ? (
+      {!canManage ? (
+        <Alert severity="info" sx={{ borderRadius: '6px' }}>
+          This report is classified under the <strong>{category}</strong> department. You can view this report, but status updates are restricted to officials assigned to this department.
+        </Alert>
+      ) : currentStatus === 'finished' ? (
         <Alert severity="success" icon={<CheckCircleIcon />}>
           This report is marked as <strong>Finished</strong>. The status pipeline is complete.
         </Alert>

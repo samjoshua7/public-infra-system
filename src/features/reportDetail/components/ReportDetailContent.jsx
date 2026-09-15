@@ -655,6 +655,7 @@ export const ReportDetailContent = ({
               <StatusUpdateControl
                 reportId={report.report_id}
                 currentStatus={report.status}
+                category={report.category}
                 onStatusUpdated={handleStatusUpdateCallback}
               />
             </Box>

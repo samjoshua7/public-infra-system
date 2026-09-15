@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Avatar, Button } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Avatar, Button, ToggleButtonGroup, ToggleButton, Chip } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { Link as RouterLink } from 'react-router-dom';
@@ -8,17 +8,21 @@ import { getDashboardStats } from './api';
 import { DashboardAnalytics } from './components/DashboardAnalytics';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
+import { usePermissions } from '../../hooks/usePermissions';
 
 export const OfficialDashboardPage = () => {
+  const { assignedDepartments, isSuperOfficial } = usePermissions();
+  const [scopeFilter, setScopeFilter] = useState('all');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const dashboardStats = await getDashboardStats();
+      const deps = scopeFilter === 'my_departments' ? assignedDepartments : null;
+      const dashboardStats = await getDashboardStats(deps);
       setStats(dashboardStats);
     } catch (err) {
       console.error('Failed to load official dashboard stats:', err);
@@ -26,11 +30,11 @@ export const OfficialDashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [scopeFilter, assignedDepartments]);
 
   useEffect(() => {
     loadDashboardStats();
-  }, []);
+  }, [loadDashboardStats]);
 
   return (
     <Box sx={{ pb: 6 }}>
@@ -49,16 +53,34 @@ export const OfficialDashboardPage = () => {
             Monitor incoming civic infrastructure reports and overall resolution metrics.
           </Typography>
         </Box>
-        <Button
-          component={RouterLink}
-          to="/dashboard/reports"
-          variant="contained"
-          color="primary"
-          startIcon={<ViewListIcon />}
-          sx={{ fontWeight: 600, px: 3, py: 1 }}
-        >
-          Manage All Reports
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          {!isSuperOfficial && assignedDepartments.length > 0 && (
+            <ToggleButtonGroup
+              size="small"
+              value={scopeFilter}
+              exclusive
+              onChange={(_, val) => val && setScopeFilter(val)}
+              aria-label="dashboard scope filter"
+            >
+              <ToggleButton value="all" sx={{ px: 2, fontWeight: 600 }}>
+                Citywide
+              </ToggleButton>
+              <ToggleButton value="my_departments" sx={{ px: 2, fontWeight: 600 }}>
+                My Department
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
+          <Button
+            component={RouterLink}
+            to="/dashboard/reports"
+            variant="contained"
+            color="primary"
+            startIcon={<ViewListIcon />}
+            sx={{ fontWeight: 600, px: 3, py: 1 }}
+          >
+            Manage Reports
+          </Button>
+        </Box>
       </Box>
 
       {/* Content */}
