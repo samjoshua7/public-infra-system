@@ -5,22 +5,18 @@ import {
   Chip,
   Pagination,
   Button,
-  Container,
+  Drawer,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import TuneIcon from '@mui/icons-material/Tune';
 
 import { listNearbyReports, fetchUserLikedReportIds, toggleReportLike } from './api';
-import { CategoryFilterBar } from './components/CategoryFilterBar';
-import { NearbyLocationBar } from './components/NearbyLocationBar';
+import { FeedFilterPanel } from './components/FeedFilterPanel';
 import { ReportCard } from './components/ReportCard';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserLocation } from '../../hooks/useUserLocation';
-import { STATUS_ORDER, STATUS_LABELS } from '../../lib/reportStatus';
 
 export const FeedPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -32,6 +28,7 @@ export const FeedPage = () => {
     requestLocation,
   } = useUserLocation();
 
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [reports, setReports] = useState([]);
   const [likedReportIds, setLikedReportIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -107,200 +104,286 @@ export const FeedPage = () => {
     }
   };
 
+  const activeFilterCount =
+    (radiusKm !== null ? 1 : 0) +
+    (category !== 'all' ? 1 : 0) +
+    (status !== 'all' ? 1 : 0);
+
   return (
-    <Container maxWidth="md" disableGutters sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
-      {/* 1. Header Bar with Title & Report Button */}
+    <Box sx={{ width: '100%', py: 1 }}>
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2.5,
+          gap: { xs: 0, lg: 3.5 },
+          alignItems: 'flex-start',
+          justifyContent: 'center',
         }}
       >
-        <Box>
-          <Typography variant="h5" fontWeight="700" sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            Public Feed
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            {hasCoords
-              ? `Showing nearby issues within ${radiusKm ? `${radiusKm} km` : 'your vicinity'}`
-              : `Tracking ${totalCount} verified infrastructure reports`}
-          </Typography>
+        {/* 1. Main Feed Stream Column (Centered & Clean) */}
+        <Box
+          sx={{
+            flex: '1 1 0',
+            minWidth: 0,
+            maxWidth: { xs: '100%', lg: '680px' },
+            width: '100%',
+          }}
+        >
+          {/* Stream Header (Compact single-line) */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 2,
+              pb: 1,
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <Box>
+              <Typography variant="h6" fontWeight="700" sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                Nearby Civic Feed
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {hasCoords
+                  ? `Prioritizing closest issues ${radiusKm ? `within ${radiusKm} km` : 'in your vicinity'}`
+                  : `Showing all ${totalCount} verified infrastructure complaints`}
+              </Typography>
+            </Box>
+
+            {/* Mobile / Tablet Filter Button (< lg) */}
+            <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 1 }}>
+              <Button
+                variant={activeFilterCount > 0 ? 'contained' : 'outlined'}
+                color="primary"
+                size="small"
+                startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+                onClick={() => setMobileFilterOpen(true)}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  px: 1.5,
+                }}
+              >
+                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Active Filter Chips Bar (Quick Dismiss Pills if active) */}
+          {activeFilterCount > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight="600">
+                Active:
+              </Typography>
+              {radiusKm !== null && (
+                <Chip
+                  label={`< ${radiusKm} km`}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  onDelete={() => {
+                    setRadiusKm(null);
+                    setPage(1);
+                  }}
+                  sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600 }}
+                />
+              )}
+              {category !== 'all' && (
+                <Chip
+                  label={category.replace('_', ' ')}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  onDelete={() => {
+                    setCategory('all');
+                    setPage(1);
+                  }}
+                  sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}
+                />
+              )}
+              {status !== 'all' && (
+                <Chip
+                  label={status.replace('_', ' ')}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  onDelete={() => {
+                    setStatus('all');
+                    setPage(1);
+                  }}
+                  sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}
+                />
+              )}
+              <Button
+                size="small"
+                onClick={() => {
+                  setCategory('all');
+                  setStatus('all');
+                  setRadiusKm(null);
+                  setPage(1);
+                }}
+                sx={{ fontSize: '0.75rem', py: 0.25, minWidth: 'auto', fontWeight: 600 }}
+              >
+                Clear all
+              </Button>
+            </Box>
+          )}
+
+          {/* Error Alert if any */}
+          {error && (
+            <Box sx={{ mb: 2 }}>
+              <ErrorAlert message={error} onRetry={loadReports} />
+            </Box>
+          )}
+
+          {/* Reports Feed Stream */}
+          {loading ? (
+            <LoadingSkeleton count={3} />
+          ) : reports.length === 0 ? (
+            <EmptyState
+              title={radiusKm ? `No Reports Within ${radiusKm} km` : 'No Reports Found'}
+              description={
+                radiusKm
+                  ? 'No infrastructure complaints were found within your chosen distance. Try selecting "All Nearby" or expanding your radius.'
+                  : 'No infrastructure reports match this filter criteria. Be the first to report.'
+              }
+              actionText={isAuthenticated ? 'Report an Issue' : 'Sign In to Report'}
+              onAction={() => {}}
+            />
+          ) : (
+            <>
+              {reports.map((report) => (
+                <ReportCard
+                  key={report.report_id}
+                  report={report}
+                  isLiked={likedReportIds.has(report.report_id)}
+                  onToggleLike={handleToggleLike}
+                  isAuth={isAuthenticated}
+                  onReportUpdated={(updated) => {
+                    setReports((prev) =>
+                      prev.map((r) => (r.report_id === updated.report_id ? { ...r, ...updated } : r))
+                    );
+                  }}
+                  onReportDeleted={(deletedId) => {
+                    setReports((prev) => prev.filter((r) => r.report_id !== deletedId));
+                    setTotalCount((prev) => Math.max(0, prev - 1));
+                  }}
+                />
+              ))}
+
+              {/* Clean Pagination */}
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={(_, value) => {
+                      setPage(value);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    color="primary"
+                    shape="rounded"
+                    size="small"
+                  />
+                </Box>
+              )}
+            </>
+          )}
         </Box>
 
-        {isAuthenticated && (
-          <Button
-            component={RouterLink}
-            to="/report/new"
-            variant="contained"
-            color="primary"
-            startIcon={<AddCircleOutlineIcon sx={{ fontSize: 18 }} />}
-            size="small"
-          >
-            Report Issue
-          </Button>
-        )}
-      </Box>
-
-      {/* 2. Hyper-Local Proximity & GPS Status Bar */}
-      <NearbyLocationBar
-        coords={coords}
-        hasCoords={hasCoords}
-        loadingLocation={loadingLocation}
-        permissionStatus={permissionStatus}
-        onRequestLocation={() => requestLocation().catch(() => {})}
-        selectedRadius={radiusKm}
-        onSelectRadius={(rad) => {
-          setRadiusKm(rad);
-          setPage(1);
-        }}
-      />
-
-      {/* 3. Crisp Category Filter Bar */}
-      <CategoryFilterBar
-        activeCategory={category}
-        onSelectCategory={(cat) => {
-          setCategory(cat);
-          setPage(1);
-        }}
-      />
-
-      {/* 4. Clean Status Filter Pills */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mb: 3,
-          overflowX: 'auto',
-          pb: 0.5,
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
-      >
-        <Chip
-          label="All Statuses"
-          clickable
-          size="small"
-          onClick={() => {
-            setStatus('all');
-            setPage(1);
-          }}
+        {/* 2. Right Sticky Filter Rail (Desktop lg+) */}
+        <Box
           sx={{
-            fontWeight: 600,
-            fontSize: '0.8125rem',
-            borderRadius: '4px',
-            borderWidth: 1,
-            borderStyle: 'solid',
-            borderColor: status === 'all' ? 'primary.main' : 'divider',
-            bgcolor: status === 'all' ? 'primary.main' : 'background.paper',
-            color: status === 'all' ? 'primary.contrastText' : 'text.secondary',
+            width: 310,
+            flexShrink: 0,
+            display: { xs: 'none', lg: 'block' },
+            position: 'sticky',
+            top: 76,
+            alignSelf: 'flex-start',
+            zIndex: 10,
           }}
-        />
-        {STATUS_ORDER.map((st) => {
-          const isSelected = status === st;
-          return (
-            <Chip
-              key={st}
-              label={STATUS_LABELS[st]}
-              clickable
-              size="small"
-              onClick={() => {
-                setStatus(st === status ? 'all' : st);
-                setPage(1);
-              }}
-              sx={{
-                fontWeight: 600,
-                fontSize: '0.8125rem',
-                borderRadius: '4px',
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor: isSelected ? 'primary.main' : 'divider',
-                bgcolor: isSelected ? 'primary.main' : 'background.paper',
-                color: isSelected ? 'primary.contrastText' : 'text.secondary',
-              }}
-            />
-          );
-        })}
-
-        {(category !== 'all' || status !== 'all' || radiusKm !== null) && (
-          <Button
-            size="small"
-            startIcon={<RefreshIcon sx={{ fontSize: 14 }} />}
-            onClick={() => {
+        >
+          <FeedFilterPanel
+            coords={coords}
+            hasCoords={hasCoords}
+            loadingLocation={loadingLocation}
+            permissionStatus={permissionStatus}
+            onRequestLocation={() => requestLocation().catch(() => {})}
+            selectedRadius={radiusKm}
+            onSelectRadius={(r) => {
+              setRadiusKm(r);
+              setPage(1);
+            }}
+            selectedCategory={category}
+            onSelectCategory={(cat) => {
+              setCategory(cat);
+              setPage(1);
+            }}
+            selectedStatus={status}
+            onSelectStatus={(st) => {
+              setStatus(st);
+              setPage(1);
+            }}
+            onResetFilters={() => {
               setCategory('all');
               setStatus('all');
               setRadiusKm(null);
               setPage(1);
             }}
-            sx={{ fontSize: '0.75rem', py: 0.25, minWidth: 'auto', flexShrink: 0, fontWeight: 600 }}
-          >
-            Reset
-          </Button>
-        )}
+            totalCount={totalCount}
+          />
+        </Box>
       </Box>
 
-      {/* Error Alert if any */}
-      {error && (
-        <Box sx={{ mb: 2 }}>
-          <ErrorAlert message={error} onRetry={loadReports} />
-        </Box>
-      )}
-
-      {/* 5. Stream of Clean Report Cards */}
-      {loading ? (
-        <LoadingSkeleton count={3} />
-      ) : reports.length === 0 ? (
-        <EmptyState
-          title={radiusKm ? `No Reports Within ${radiusKm} km` : 'No Reports Found'}
-          description={
-            radiusKm
-              ? 'No infrastructure complaints were found within your chosen distance. Try selecting "All Nearby" or expanding your radius.'
-              : 'No infrastructure reports match this filter criteria. Be the first to report.'
-          }
-          actionText={isAuthenticated ? 'Report an Issue' : 'Sign In to Report'}
-          onAction={() => {}}
+      {/* 3. Mobile Filter Drawer (< lg) */}
+      <Drawer
+        anchor="bottom"
+        open={mobileFilterOpen}
+        onClose={() => setMobileFilterOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: '85vh',
+            p: 2,
+          },
+        }}
+      >
+        <FeedFilterPanel
+          coords={coords}
+          hasCoords={hasCoords}
+          loadingLocation={loadingLocation}
+          permissionStatus={permissionStatus}
+          onRequestLocation={() => requestLocation().catch(() => {})}
+          selectedRadius={radiusKm}
+          onSelectRadius={(r) => {
+            setRadiusKm(r);
+            setPage(1);
+          }}
+          selectedCategory={category}
+          onSelectCategory={(cat) => {
+            setCategory(cat);
+            setPage(1);
+          }}
+          selectedStatus={status}
+          onSelectStatus={(st) => {
+            setStatus(st);
+            setPage(1);
+          }}
+          onResetFilters={() => {
+            setCategory('all');
+            setStatus('all');
+            setRadiusKm(null);
+            setPage(1);
+          }}
+          totalCount={totalCount}
+          isMobile
+          onClose={() => setMobileFilterOpen(false)}
         />
-      ) : (
-        <>
-          {reports.map((report) => (
-            <ReportCard
-              key={report.report_id}
-              report={report}
-              isLiked={likedReportIds.has(report.report_id)}
-              onToggleLike={handleToggleLike}
-              isAuth={isAuthenticated}
-              onReportUpdated={(updated) => {
-                setReports((prev) =>
-                  prev.map((r) => (r.report_id === updated.report_id ? { ...r, ...updated } : r))
-                );
-              }}
-              onReportDeleted={(deletedId) => {
-                setReports((prev) => prev.filter((r) => r.report_id !== deletedId));
-                setTotalCount((prev) => Math.max(0, prev - 1));
-              }}
-            />
-          ))}
-
-          {/* Clean Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, value) => {
-                  setPage(value);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                color="primary"
-                shape="rounded"
-                size="small"
-              />
-            </Box>
-          )}
-        </>
-      )}
-    </Container>
+      </Drawer>
+    </Box>
   );
 };
