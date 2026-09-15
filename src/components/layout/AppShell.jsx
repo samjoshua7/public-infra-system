@@ -16,14 +16,12 @@ export const AppShell = ({ children }) => {
         minHeight: '100vh',
         bgcolor: 'background.default',
         color: 'text.primary',
-        overflowX: 'hidden',
+        overflowX: 'clip',
       }}
     >
       {/* 1. Desktop Navigation: Left Sidebar + Desktop Header */}
       <DesktopSidebar />
-      <Box sx={{ pl: { xs: 0, md: '240px' } }}>
-        <AppHeader />
-      </Box>
+      <AppHeader />
 
       {/* 2. Mobile Navigation: Top Bar */}
       <MobileTopBar />
@@ -34,7 +32,7 @@ export const AppShell = ({ children }) => {
         sx={{
           flexGrow: 1,
           pl: { xs: 0, md: '240px' },
-          py: { xs: 2, sm: 3 },
+          pt: { xs: 2, md: '76px' }, // 56px fixed header + 20px breathing room
           pb: { xs: '76px', md: 3 }, // Bottom padding on mobile so content clears bottom nav
         }}
       >

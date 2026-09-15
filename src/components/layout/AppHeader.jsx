@@ -71,14 +71,19 @@ export const AppHeader = () => {
 
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       color="default"
       elevation={0}
       sx={{
         display: { xs: 'none', md: 'flex' },
+        left: { xs: 0, md: '240px' },
+        right: 0,
+        top: 0,
+        width: { xs: '100%', md: 'calc(100% - 240px)' },
         bgcolor: 'background.paper',
         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         zIndex: 1100,
+        height: 56,
       }}
     >
       <Toolbar
