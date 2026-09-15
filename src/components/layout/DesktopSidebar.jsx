@@ -10,6 +10,7 @@ import {
   Button,
   Avatar,
   Divider,
+  Badge,
 } from '@mui/material';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
@@ -23,11 +24,13 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 import { signOut } from '../../features/auth/api';
 import { ThemeToggleButton } from './ThemeToggleButton';
 
 export const DesktopSidebar = () => {
   const { user, profile, role, isAuthenticated } = useAuth();
+  const { unreadCount } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -61,7 +64,11 @@ export const DesktopSidebar = () => {
     {
       label: 'Activity',
       path: '/notifications',
-      icon: <NotificationsNoneIcon sx={{ fontSize: 20 }} />,
+      icon: (
+        <Badge badgeContent={unreadCount} color="error" max={99}>
+          <NotificationsNoneIcon sx={{ fontSize: 20 }} />
+        </Badge>
+      ),
       visible: isAuthenticated,
     },
     {

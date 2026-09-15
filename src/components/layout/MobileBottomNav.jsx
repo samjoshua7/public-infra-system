@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Badge } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
@@ -9,10 +9,12 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export const MobileBottomNav = () => {
   const location = useLocation();
   const { isAuthenticated, role } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const isCurrent = (path) => location.pathname === path;
 
@@ -41,7 +43,11 @@ export const MobileBottomNav = () => {
     {
       label: 'Activity',
       path: '/notifications',
-      icon: <NotificationsNoneIcon sx={{ fontSize: 22 }} />,
+      icon: (
+        <Badge badgeContent={unreadCount} color="error" max={99}>
+          <NotificationsNoneIcon sx={{ fontSize: 22 }} />
+        </Badge>
+      ),
       visible: isAuthenticated,
     },
     {

@@ -9,6 +9,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Badge,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
@@ -16,13 +17,16 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 import { signOut } from '../../features/auth/api';
 import { ThemeToggleButton } from './ThemeToggleButton';
 
 export const MobileTopBar = () => {
   const { user, profile, role, isAuthenticated } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -102,8 +106,22 @@ export const MobileTopBar = () => {
           </Typography>
         </Box>
 
-        {/* Right Controls: Theme Toggle & Avatar Menu */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Right Controls: Notifications, Theme Toggle & Avatar Menu */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          {isAuthenticated && (
+            <IconButton
+              component={RouterLink}
+              to="/notifications"
+              size="small"
+              aria-label="Notifications"
+              sx={{ color: 'text.secondary' }}
+            >
+              <Badge badgeContent={unreadCount} color="error" max={99}>
+                <NotificationsNoneIcon sx={{ fontSize: 20 }} />
+              </Badge>
+            </IconButton>
+          )}
+
           <ThemeToggleButton />
 
           {isAuthenticated ? (
