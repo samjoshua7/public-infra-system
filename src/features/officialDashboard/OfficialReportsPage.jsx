@@ -23,7 +23,10 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LockIcon from '@mui/icons-material/Lock';
 
+import { useAuth } from '../../hooks/useAuth';
+import { getPrivacyDisplay } from '../../lib/privacyUtils';
 import { listReportsForOfficial } from './api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
@@ -47,6 +50,7 @@ const categoryLabels = {
 };
 
 export const OfficialReportsPage = () => {
+  const { user: currentUser } = useAuth();
   const [reports, setReports] = useState([]);
   const [statusTab, setStatusTab] = useState('all');
   const [page, setPage] = useState(1);
@@ -192,6 +196,8 @@ export const OfficialReportsPage = () => {
                     </TableSortLabel>
                   </TableCell>
 
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Reporter</TableCell>
+
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Location</TableCell>
 
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
@@ -267,6 +273,74 @@ export const OfficialReportsPage = () => {
                             </Tooltip>
                           )}
                         </Box>
+                      </TableCell>
+
+                      {/* Reporter (with strict Privacy Lock masking) */}
+                      <TableCell sx={{ py: 1, whiteSpace: 'nowrap' }}>
+                        {(() => {
+                          const privacyInfo = getPrivacyDisplay({
+                            reporterId: r.reporter_id,
+                            realName: r.users?.name,
+                            anonymousName: r.users?.anonymous_name || r.anonymous_name,
+                            isPostLocked: Boolean(r.privacy_lock),
+                            isAccountLocked: Boolean(r.users?.privacy_lock),
+                            currentUserId: currentUser?.id,
+                          });
+
+                          if (privacyInfo.isLocked && !privacyInfo.isAuthor) {
+                            return (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar sx={{ width: 26, height: 26, bgcolor: '#64748b', fontSize: '0.75rem' }}>
+                                  🦒
+                                </Avatar>
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography variant="body2" fontWeight="600" color="text.secondary" noWrap>
+                                    {privacyInfo.displayName}
+                                  </Typography>
+                                  <Chip
+                                    icon={<LockIcon sx={{ fontSize: '10px !important' }} />}
+                                    label="Anonymous"
+                                    size="small"
+                                    sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700 }}
+                                  />
+                                </Box>
+                              </Box>
+                            );
+                          }
+
+                          if (privacyInfo.isAuthor && privacyInfo.isLocked) {
+                            return (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar sx={{ width: 26, height: 26, bgcolor: 'warning.main', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  {privacyInfo.avatarChar}
+                                </Avatar>
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography variant="body2" fontWeight="600" noWrap>
+                                    {privacyInfo.displayName} (You)
+                                  </Typography>
+                                  <Chip
+                                    icon={<LockIcon sx={{ fontSize: '10px !important' }} />}
+                                    label="Masked to others"
+                                    size="small"
+                                    color="warning"
+                                    sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700 }}
+                                  />
+                                </Box>
+                              </Box>
+                            );
+                          }
+
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar sx={{ width: 26, height: 26, bgcolor: 'primary.main', fontSize: '0.75rem', fontWeight: 600 }}>
+                                {privacyInfo.avatarChar}
+                              </Avatar>
+                              <Typography variant="body2" fontWeight="600" noWrap>
+                                {privacyInfo.displayName}
+                              </Typography>
+                            </Box>
+                          );
+                        })()}
                       </TableCell>
 
                       {/* 3. Location */}

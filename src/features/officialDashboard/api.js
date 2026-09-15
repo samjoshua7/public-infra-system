@@ -29,12 +29,13 @@ export const listReportsForOfficial = async ({
       category,
       latitude,
       longitude,
+      privacy_lock,
       status,
       is_hidden,
       like_count,
       comment_count,
       created_at,
-      users:reporter_id (name, email)
+      users:reporter_id (name, email, anonymous_name, privacy_lock)
     `,
       { count: 'exact' }
     )
