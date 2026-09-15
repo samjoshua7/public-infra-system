@@ -500,7 +500,7 @@ export const AdminUsersPage = () => {
                   inputProps={{ step: 'any' }}
                   label="Center Latitude"
                   placeholder="e.g. 13.0827"
-                  value={geofLat}
+                  value={geofenceLat}
                   onChange={(e) => setGeofenceLat(e.target.value)}
                   disabled={settingsLoading || settingsSaving}
                 />
@@ -513,7 +513,7 @@ export const AdminUsersPage = () => {
                   inputProps={{ step: 'any' }}
                   label="Center Longitude"
                   placeholder="e.g. 80.2707"
-                  value={geofLng}
+                  value={geofenceLng}
                   onChange={(e) => setGeofenceLng(e.target.value)}
                   disabled={settingsLoading || settingsSaving}
                 />
