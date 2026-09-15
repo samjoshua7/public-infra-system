@@ -20,6 +20,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import NearMeIcon from '@mui/icons-material/NearMe';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -33,6 +34,7 @@ import { statusColors } from '../../../app/theme/theme';
 import { setReportHidden } from '../../reportDetail/api';
 import { EditReportDialog } from '../../reportDetail/components/EditReportDialog';
 import { DeleteReportConfirmDialog } from '../../reportDetail/components/DeleteReportConfirmDialog';
+import { formatDistance } from '../../../lib/geoUtils';
 
 const categoryLabels = {
   pothole: 'Pothole',
@@ -227,8 +229,19 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
             }}
           />
 
-          {/* Category Tag pill on image */}
-          <Box sx={{ position: 'absolute', bottom: 10, left: 12 }}>
+          {/* Category Tag pill and Proximity Pill on image */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 10,
+              left: 12,
+              right: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              pointerEvents: 'none',
+            }}
+          >
             <Chip
               label={categoryLabels[report.category] || report.category}
               size="small"
@@ -240,8 +253,28 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
                 borderRadius: '4px',
                 backdropFilter: 'blur(4px)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
+                pointerEvents: 'auto',
               }}
             />
+
+            {report.distance_km != null && (
+              <Chip
+                icon={<NearMeIcon sx={{ fontSize: '14px !important', color: '#38bdf8 !important' }} />}
+                label={formatDistance(report.distance_km)}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(15, 23, 42, 0.9)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  borderRadius: '4px',
+                  backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  pointerEvents: 'auto',
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -284,32 +317,53 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
             {report.description}
           </Typography>
 
-          {/* Location Pin */}
+          {/* Location Pin & Distance info */}
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 0.5,
-              color: 'text.secondary',
+              justifyContent: 'space-between',
+              gap: 1,
+              flexWrap: 'wrap',
             }}
           >
-            <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              component="a"
-              href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                fontWeight: 500,
-                fontSize: '0.75rem',
-                textDecoration: 'none',
-                '&:hover': { color: 'primary.main', textDecoration: 'underline' },
-              }}
-            >
-              GPS: {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+              <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                component="a"
+                href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  textDecoration: 'none',
+                  '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+                }}
+              >
+                GPS: {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
+              </Typography>
+            </Box>
+
+            {report.distance_km != null && (
+              <Chip
+                icon={<NearMeIcon sx={{ fontSize: '13px !important' }} />}
+                label={formatDistance(report.distance_km)}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{
+                  height: 22,
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.08)' : 'rgba(14, 165, 233, 0.06)',
+                }}
+              />
+            )}
           </Box>
         </CardContent>
 
