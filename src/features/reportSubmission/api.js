@@ -31,6 +31,7 @@ export const createIssueReport = async ({
   latitude,
   longitude,
   address,
+  privacyLock = false,
   reporterId,
 }) => {
   const basePayload = {
@@ -40,6 +41,7 @@ export const createIssueReport = async ({
     category,
     latitude,
     longitude,
+    privacy_lock: Boolean(privacyLock),
     reporter_id: reporterId,
   };
 

@@ -18,6 +18,8 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SecurityIcon from '@mui/icons-material/Security';
+import { Switch, FormControlLabel } from '@mui/material';
 
 export const AutoFillReviewStep = ({
   title,
@@ -33,6 +35,10 @@ export const AutoFillReviewStep = ({
   setAddress,
   latitude,
   longitude,
+  privacyLock = false,
+  setPrivacyLock,
+  accountPrivacyLockActive = false,
+  dummyAlias = 'LongGiraffe',
   onSubmit,
   onBack,
   submitting,
@@ -157,6 +163,72 @@ export const AutoFillReviewStep = ({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe the problem, hazard potential, and surrounding details..."
         />
+
+        {/* Privacy Lock Toggle */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mt: 2.5,
+            borderRadius: 2,
+            bgcolor: (theme) =>
+              privacyLock
+                ? theme.palette.mode === 'dark'
+                  ? 'rgba(30, 41, 59, 0.7)'
+                  : 'rgba(241, 245, 249, 0.85)'
+                : 'action.hover',
+            border: (theme) =>
+              `1px solid ${privacyLock ? theme.palette.primary.main : theme.palette.divider}`,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <SecurityIcon
+              color={privacyLock ? 'primary' : 'action'}
+              sx={{ fontSize: 24, mt: 0.25 }}
+            />
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="subtitle2" fontWeight="700">
+                  Privacy Lock (Post Anonymously)
+                </Typography>
+                <Chip
+                  label={privacyLock ? 'Anonymous' : 'Public'}
+                  color={privacyLock ? 'primary' : 'default'}
+                  size="small"
+                  sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700 }}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                {accountPrivacyLockActive
+                  ? 'Account-wide Privacy Lock is active. Your dummy alias will be used automatically.'
+                  : 'Masks your identity from all citizens, officials, and admins. Only your dummy alias will appear publicly.'}
+              </Typography>
+              {privacyLock && (
+                <Box sx={{ mt: 0.75, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="caption" fontWeight="700" color="primary.main">
+                    Publicly posted as: 🦒 {dummyAlias}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={Boolean(privacyLock)}
+                onChange={(e) => setPrivacyLock && setPrivacyLock(e.target.checked)}
+                disabled={accountPrivacyLockActive}
+                color="primary"
+              />
+            }
+            label=""
+            sx={{ m: 0 }}
+          />
+        </Paper>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
           <Button

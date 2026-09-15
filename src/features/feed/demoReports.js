@@ -17,6 +17,8 @@ export const DEMO_REPORTS = [
     users: {
       name: 'alex_turner',
       email: 'alex@civicvoice.org',
+      anonymous_name: 'SwiftFalcon104',
+      privacy_lock: false,
     },
   },
   {
@@ -28,6 +30,8 @@ export const DEMO_REPORTS = [
     latitude: 37.7833,
     longitude: -122.4167,
     address: 'Elm St & 14th Ave, Residential Block',
+    privacy_lock: true,
+    anonymous_name: 'LongGiraffe421',
     status: 'budget_allocated',
     is_hidden: false,
     like_count: 52,
@@ -37,6 +41,8 @@ export const DEMO_REPORTS = [
     users: {
       name: 'sarah_civic',
       email: 'sarah@civicvoice.org',
+      anonymous_name: 'LongGiraffe421',
+      privacy_lock: true,
     },
   },
   {
@@ -48,6 +54,8 @@ export const DEMO_REPORTS = [
     latitude: 37.7699,
     longitude: -122.4467,
     address: 'Civic Center Plaza, School Crossing Zone',
+    privacy_lock: false,
+    anonymous_name: 'SilentOtter819',
     status: 'finished',
     is_hidden: false,
     like_count: 89,
@@ -57,6 +65,8 @@ export const DEMO_REPORTS = [
     users: {
       name: 'marcus_chen',
       email: 'marcus@civicvoice.org',
+      anonymous_name: 'SilentOtter819',
+      privacy_lock: false,
     },
   },
   {
@@ -67,6 +77,9 @@ export const DEMO_REPORTS = [
     category: 'garbage',
     latitude: 37.7651,
     longitude: -122.4221,
+    address: 'Central Park North Walkway',
+    privacy_lock: false,
+    anonymous_name: 'CleverPenguin335',
     status: 'ordered',
     is_hidden: false,
     like_count: 41,
@@ -76,6 +89,8 @@ export const DEMO_REPORTS = [
     users: {
       name: 'elena_rodriguez',
       email: 'elena@civicvoice.org',
+      anonymous_name: 'CleverPenguin335',
+      privacy_lock: false,
     },
   },
 ];

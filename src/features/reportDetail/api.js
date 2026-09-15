@@ -119,13 +119,14 @@ export const getReportDetail = async (reportId) => {
         latitude,
         longitude,
         address,
+        privacy_lock,
         status,
         is_hidden,
         like_count,
         comment_count,
         created_at,
         updated_at,
-        users:reporter_id (name, email)
+        users:reporter_id (name, email, anonymous_name, privacy_lock)
       `
     : `
         report_id,
@@ -136,13 +137,14 @@ export const getReportDetail = async (reportId) => {
         category,
         latitude,
         longitude,
+        privacy_lock,
         status,
         is_hidden,
         like_count,
         comment_count,
         created_at,
         updated_at,
-        users:reporter_id (name, email)
+        users:reporter_id (name, email, anonymous_name, privacy_lock)
       `;
 
   try {
@@ -200,20 +202,27 @@ export const listReportComments = async (reportId) => {
   }
 };
 
-export const updateReportDetails = async (reportId, { title, description, category }) => {
+export const updateReportDetails = async (reportId, { title, description, category, privacy_lock }) => {
   if (typeof reportId === 'string' && reportId.startsWith('demo-')) {
     const demo = DEMO_REPORTS.find((r) => r.report_id === reportId);
     if (demo) {
-      if (title) demo.title = title;
-      if (description) demo.description = description;
-      if (category) demo.category = category;
+      if (title !== undefined) demo.title = title;
+      if (description !== undefined) demo.description = description;
+      if (category !== undefined) demo.category = category;
+      if (privacy_lock !== undefined) demo.privacy_lock = privacy_lock;
       return demo;
     }
   }
 
+  const payload = {};
+  if (title !== undefined) payload.title = title;
+  if (description !== undefined) payload.description = description;
+  if (category !== undefined) payload.category = category;
+  if (privacy_lock !== undefined) payload.privacy_lock = privacy_lock;
+
   const { data, error } = await supabase
     .from('issue_reports')
-    .update({ title, description, category })
+    .update(payload)
     .eq('report_id', reportId)
     .select()
     .single();

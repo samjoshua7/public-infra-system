@@ -35,9 +35,13 @@ export const listNearbyReports = async ({
         reports: data.map((item) => ({
           ...item,
           distance_km: item.distance_km !== null ? parseFloat(item.distance_km) : null,
+          privacy_lock: Boolean(item.privacy_lock),
+          anonymous_name: item.anonymous_name || 'LongGiraffe',
           users: {
             name: item.reporter_name,
             email: item.reporter_email,
+            anonymous_name: item.anonymous_name || 'LongGiraffe',
+            privacy_lock: Boolean(item.privacy_lock),
           },
         })),
         totalCount,
@@ -88,12 +92,13 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
         latitude,
         longitude,
         address,
+        privacy_lock,
         status,
         is_hidden,
         like_count,
         comment_count,
         created_at,
-        users:reporter_id (name, email)
+        users:reporter_id (name, email, anonymous_name, privacy_lock)
       `
     : `
         report_id,
@@ -104,12 +109,13 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
         category,
         latitude,
         longitude,
+        privacy_lock,
         status,
         is_hidden,
         like_count,
         comment_count,
         created_at,
-        users:reporter_id (name, email)
+        users:reporter_id (name, email, anonymous_name, privacy_lock)
       `;
 
   try {

@@ -20,6 +20,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import SecurityIcon from '@mui/icons-material/Security';
 
 import { SatelliteLocationPicker } from './SatelliteLocationPicker';
 
@@ -38,6 +39,10 @@ export const PhotoCaptureStep = ({
   address,
   addressLoading,
   onLocationChange,
+  privacyLock = false,
+  onTogglePrivacyLock,
+  accountPrivacyLockActive = false,
+  dummyAlias = 'LongGiraffe',
 }) => {
   const fileInputRef = useRef(null);
   const [showMap, setShowMap] = useState(false);
@@ -231,7 +236,7 @@ export const PhotoCaptureStep = ({
           </Card>
 
           {/* Opt-In AI Checkbox */}
-          <Paper sx={{ p: 1.5, mb: 3, bgcolor: 'action.hover', borderRadius: '4px' }}>
+          <Paper sx={{ p: 1.5, mb: 1.5, bgcolor: 'action.hover', borderRadius: '4px' }}>
             <FormControlLabel
               control={
                 <Checkbox
@@ -247,6 +252,54 @@ export const PhotoCaptureStep = ({
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Uses OpenRouter AI to analyze your photo and generate report details. Uncheck for manual entry.
+                  </Typography>
+                </Box>
+              }
+            />
+          </Paper>
+
+          {/* Privacy Lock Checkbox */}
+          <Paper
+            sx={{
+              p: 1.5,
+              mb: 3,
+              bgcolor: (theme) =>
+                privacyLock
+                  ? theme.palette.mode === 'dark'
+                    ? 'rgba(30, 41, 59, 0.7)'
+                    : 'rgba(241, 245, 249, 0.85)'
+                  : 'action.hover',
+              border: (theme) =>
+                `1px solid ${privacyLock ? theme.palette.primary.main : theme.palette.divider}`,
+              borderRadius: '4px',
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={privacyLock}
+                  onChange={(e) => onTogglePrivacyLock && onTogglePrivacyLock(e.target.checked)}
+                  disabled={accountPrivacyLockActive}
+                  color="primary"
+                />
+              }
+              label={
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle2" fontWeight="600">
+                      🔒 Privacy Lock (Post Anonymously)
+                    </Typography>
+                    <Chip
+                      label={privacyLock ? `As 🦒 ${dummyAlias}` : 'Public'}
+                      size="small"
+                      color={privacyLock ? 'primary' : 'default'}
+                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                    />
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {accountPrivacyLockActive
+                      ? 'Account-wide Privacy Lock active. Your identity will be hidden automatically.'
+                      : 'Hides your name and profile from everyone (citizens, officials, and admins).'}
                   </Typography>
                 </Box>
               }

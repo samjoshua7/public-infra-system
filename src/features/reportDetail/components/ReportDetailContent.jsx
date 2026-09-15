@@ -35,6 +35,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import LockIcon from '@mui/icons-material/Lock';
 
 import {
   getReportDetail,
@@ -52,6 +53,7 @@ import { ErrorAlert } from '../../../components/feedback/ErrorAlert';
 import { useAuth } from '../../../hooks/useAuth';
 import { useThemeMode } from '../../../app/providers/ThemeModeProvider';
 import { statusColors } from '../../../app/theme/theme';
+import { getPrivacyDisplay } from '../../../lib/privacyUtils';
 
 const categoryLabels = {
   pothole: 'Pothole',
@@ -412,44 +414,72 @@ export const ReportDetailContent = ({
           }}
         >
           {/* Reporter Profile */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-            <Avatar
-              sx={{
-                width: 36,
-                height: 36,
-                bgcolor: 'primary.main',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {(report.users?.name || 'C').charAt(0).toUpperCase()}
-            </Avatar>
-            <Box sx={{ minWidth: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <Typography
-                  variant="subtitle2"
-                  fontWeight="700"
-                  noWrap
-                  sx={{ fontSize: '0.875rem', lineHeight: 1.2 }}
+          {(() => {
+            const privacyInfo = getPrivacyDisplay({
+              reporterId: report.reporter_id,
+              realName: report.users?.name,
+              anonymousName: report.users?.anonymous_name || report.anonymous_name,
+              isPostLocked: Boolean(report.privacy_lock),
+              isAccountLocked: Boolean(report.users?.privacy_lock),
+              currentUserId: user?.id,
+            });
+
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    bgcolor: privacyInfo.avatarBg || 'primary.main',
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
                 >
-                  {report.users?.name || 'Citizen'}
-                </Typography>
-                {report.users?.role === 'GOVERNMENT_OFFICIAL' && (
-                  <Chip
-                    icon={<VerifiedUserIcon sx={{ fontSize: '12px !important' }} />}
-                    label="Official"
-                    size="small"
-                    color="info"
-                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                  />
-                )}
+                  {privacyInfo.isLocked && !privacyInfo.isAuthor ? (
+                    <LockIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    privacyInfo.avatarChar
+                  )}
+                </Avatar>
+                <Box sx={{ minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                    <Typography
+                      variant="subtitle2"
+                      fontWeight="700"
+                      noWrap
+                      sx={{ fontSize: '0.875rem', lineHeight: 1.2 }}
+                    >
+                      {privacyInfo.isLocked && !privacyInfo.isAuthor ? `🦒 ${privacyInfo.displayName}` : privacyInfo.displayName}
+                    </Typography>
+                    {privacyInfo.isLocked && (
+                      <Chip
+                        icon={<LockIcon sx={{ fontSize: '11px !important' }} />}
+                        label={privacyInfo.isAuthor ? '🔒 Visible only to you' : '🔒 Anonymous'}
+                        size="small"
+                        color={privacyInfo.isAuthor ? 'warning' : 'default'}
+                        sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                      />
+                    )}
+                    {report.users?.role === 'GOVERNMENT_OFFICIAL' && (
+                      <Chip
+                        icon={<VerifiedUserIcon sx={{ fontSize: '12px !important' }} />}
+                        label="Official"
+                        size="small"
+                        color="info"
+                        sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.725rem' }}>
+                    {privacyInfo.isAuthor && privacyInfo.isLocked
+                      ? `Hidden as 🦒 ${privacyInfo.dummyName} to others • ${formatRelativeTime(report.created_at)}`
+                      : `Reporter • ${formatRelativeTime(report.created_at)}`}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.725rem' }}>
-                Reporter • {formatRelativeTime(report.created_at)}
-              </Typography>
-            </Box>
-          </Box>
+            );
+          })()}
 
           {/* Right Action Icons: Options & Close */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

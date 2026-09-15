@@ -18,10 +18,21 @@ const steps = ['Capture Photo & Location', 'Review Details & Publish'];
 
 export const ReportSubmissionPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { coords, error: geoError, loading: geoLoading, getCoordinates } = useGeolocation();
 
   const [activeStep, setActiveStep] = useState(0);
+
+  // Privacy Lock State (defaults to account-wide setting if enabled)
+  const [privacyLock, setPrivacyLock] = useState(false);
+  const accountPrivacyLockActive = Boolean(profile?.privacy_lock);
+  const userDummyAlias = profile?.anonymous_name || 'LongGiraffe';
+
+  useEffect(() => {
+    if (profile?.privacy_lock) {
+      setPrivacyLock(true);
+    }
+  }, [profile?.privacy_lock]);
 
   // Custom Coords (from dragging pin on map)
   const [customCoords, setCustomCoords] = useState(null);
@@ -198,6 +209,7 @@ export const ReportSubmissionPage = () => {
         latitude: effectiveCoords.latitude,
         longitude: effectiveCoords.longitude,
         address: address || null,
+        privacyLock,
         reporterId: user.id,
       });
 
@@ -241,6 +253,10 @@ export const ReportSubmissionPage = () => {
             address={address}
             addressLoading={addressLoading}
             onLocationChange={(newCoords) => setCustomCoords(newCoords)}
+            privacyLock={privacyLock}
+            onTogglePrivacyLock={setPrivacyLock}
+            accountPrivacyLockActive={accountPrivacyLockActive}
+            dummyAlias={userDummyAlias}
           />
         ) : (
           <AutoFillReviewStep
@@ -257,6 +273,10 @@ export const ReportSubmissionPage = () => {
             setAddress={setAddress}
             latitude={effectiveCoords?.latitude}
             longitude={effectiveCoords?.longitude}
+            privacyLock={privacyLock}
+            setPrivacyLock={setPrivacyLock}
+            accountPrivacyLockActive={accountPrivacyLockActive}
+            dummyAlias={userDummyAlias}
             onSubmit={handleSubmitReport}
             onBack={() => setActiveStep(0)}
             submitting={submitting}

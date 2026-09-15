@@ -13,6 +13,8 @@ import {
   Skeleton,
   Snackbar,
   Alert,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import GridOnIcon from '@mui/icons-material/GridOn';
@@ -22,15 +24,18 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import SecurityIcon from '@mui/icons-material/Security';
+import LockIcon from '@mui/icons-material/Lock';
 
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabaseClient';
 import { ReportDetailDialog } from '../officialDashboard/components/ReportDetailDialog';
 import { signOut } from '../auth/api';
+import { getUserProfileById, updateAccountPrivacyLock } from './api';
 
 export const ProfilePage = () => {
   const { id: routeUserId } = useParams();
-  const { user, profile: authProfile, role: authRole, isAuthenticated } = useAuth();
+  const { user, profile: authProfile, role: authRole, isAuthenticated, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const targetUserId = routeUserId || user?.id;
@@ -42,6 +47,8 @@ export const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [privacyLock, setPrivacyLock] = useState(false);
+  const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
 
   const [profileData, setProfileData] = useState(null);
 
@@ -53,20 +60,30 @@ export const ProfilePage = () => {
 
     setLoading(true);
     try {
-      // 1. Fetch user profile if viewing someone else
+      // 1. Fetch user profile
+      let loadedProfile = null;
       if (isOwnProfile) {
-        setProfileData({
-          name: authProfile?.name || user?.email?.split('@')[0] || 'Citizen',
+        const ownData = await getUserProfileById(user?.id);
+        loadedProfile = {
+          name: ownData?.name || authProfile?.name || user?.email?.split('@')[0] || 'Citizen',
           email: user?.email,
-          role: authRole,
-        });
+          role: ownData?.role || authRole,
+          anonymous_name: ownData?.anonymous_name || authProfile?.anonymous_name || 'LongGiraffe',
+          privacy_lock: ownData?.privacy_lock ?? authProfile?.privacy_lock ?? false,
+        };
+        setPrivacyLock(Boolean(loadedProfile.privacy_lock));
       } else {
-        const { data: uData } = await supabase
-          .from('users')
-          .select('name, email, role')
-          .eq('user_id', targetUserId)
-          .single();
-        setProfileData(uData || { name: 'Citizen', email: '', role: 'CITIZEN' });
+        const uData = await getUserProfileById(targetUserId);
+        loadedProfile = uData || { name: 'Citizen', email: '', role: 'CITIZEN', privacy_lock: false };
+      }
+      setProfileData(loadedProfile);
+
+      // If viewing someone else and their profile is privacy-locked, guard their reports
+      if (!isOwnProfile && loadedProfile?.privacy_lock) {
+        setUserReports([]);
+        setLikedReports([]);
+        setLoading(false);
+        return;
       }
 
       // 2. Fetch user's own reports
@@ -98,6 +115,28 @@ export const ProfilePage = () => {
   useEffect(() => {
     loadProfileData();
   }, [loadProfileData]);
+
+  const handleTogglePrivacyLock = async (e) => {
+    if (!user?.id || updatingPrivacy) return;
+    const nextVal = e.target.checked;
+    setPrivacyLock(nextVal);
+    setUpdatingPrivacy(true);
+    try {
+      await updateAccountPrivacyLock(user.id, nextVal);
+      if (refreshProfile) await refreshProfile();
+      setToastMessage(
+        nextVal
+          ? '🔒 Privacy Lock enabled! All your reports are now anonymous.'
+          : 'Privacy Lock disabled. Your public profile is visible.'
+      );
+    } catch (err) {
+      console.error('Failed to update privacy lock:', err);
+      setPrivacyLock(!nextVal);
+      setToastMessage('Failed to update Privacy Lock. Please try again.');
+    } finally {
+      setUpdatingPrivacy(false);
+    }
+  };
 
   const handleShareProfile = () => {
     const url = window.location.href;
@@ -261,37 +300,141 @@ export const ProfilePage = () => {
           <Typography variant="body2" color="text.secondary">
             Actively reporting public infrastructure issues to create safer streets for our city.
           </Typography>
+
+          {/* Privacy Lock (Account-Wide) Card for Own Profile */}
+          {isOwnProfile && (
+            <Box
+              sx={{
+                mt: 2.5,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(241, 245, 249, 0.8)',
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <SecurityIcon color="primary" sx={{ fontSize: 20 }} />
+                  <Typography variant="subtitle2" fontWeight="700">
+                    Privacy Lock (Account-Wide)
+                  </Typography>
+                  <Chip
+                    label={privacyLock ? 'Active' : 'Disabled'}
+                    color={privacyLock ? 'success' : 'default'}
+                    size="small"
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }}
+                  />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', maxWidth: 480 }}>
+                  When enabled, your identity is masked across <b>all</b> your reports. Other citizens, officials, and admins will only see your dummy alias:
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 0.75,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    px: 1.25,
+                    py: 0.35,
+                    borderRadius: 1.5,
+                    bgcolor: 'action.hover',
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <Typography variant="caption" fontWeight="700" color="primary.main">
+                    🦒 {profileData?.anonymous_name || authProfile?.anonymous_name || 'LongGiraffe'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+                    (Your Assigned Dummy Alias)
+                  </Typography>
+                </Box>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(privacyLock)}
+                    onChange={handleTogglePrivacyLock}
+                    disabled={updatingPrivacy}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body2" fontWeight="600">
+                    {privacyLock ? 'Locked' : 'Public'}
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Box>
+          )}
+
+          {/* Privacy Protected notice if viewing someone else's locked profile */}
+          {!isOwnProfile && profileData?.privacy_lock && (
+            <Box
+              sx={{
+                mt: 2.5,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(241, 245, 249, 0.8)',
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <LockIcon color="warning" sx={{ fontSize: 24 }} />
+              <Box>
+                <Typography variant="subtitle2" fontWeight="700">
+                  Profile Protected by Privacy Lock
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  This citizen has enabled Privacy Lock. Their identity and activity are kept strictly anonymous to protect whistleblower safety.
+                </Typography>
+              </Box>
+            </Box>
+          )}
         </Box>
       </Box>
 
-      {/* Tabs */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, val) => setActiveTab(val)}
-          textColor="primary"
-          indicatorColor="primary"
-        >
-          <Tab
-            value="reports"
-            icon={<GridOnIcon fontSize="small" />}
-            iconPosition="start"
-            label="REPORTS"
-            sx={{ fontWeight: 700, fontSize: '0.8125rem' }}
-          />
-          {isOwnProfile && (
-            <Tab
-              value="liked"
-              icon={<FavoriteBorderIcon fontSize="small" />}
-              iconPosition="start"
-              label="LIKED"
-              sx={{ fontWeight: 700, fontSize: '0.8125rem' }}
-            />
-          )}
-        </Tabs>
-      </Box>
-
-      {/* Media Grid */}
+      {/* If viewing someone else with privacy lock, hide report list tabs */}
+      {!isOwnProfile && profileData?.privacy_lock ? (
+        <Box sx={{ py: 6, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No public reports or activity available for protected citizen profiles.
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          {/* Tabs */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, val) => setActiveTab(val)}
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{
+                '& .MuiTab-root': {
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  minHeight: 44,
+                  gap: 1,
+                },
+              }}
+            >
+              <Tab icon={<GridOnIcon sx={{ fontSize: 18 }} />} label="Reports" value="reports" />
+              {isOwnProfile && (
+                <Tab icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />} label="Liked Issues" value="liked" />
+              )}
+            </Tabs>
+          </Box>
       {loading ? (
         <Grid container spacing={1}>
           {[...Array(6)].map((_, i) => (
@@ -388,6 +531,8 @@ export const ProfilePage = () => {
             </Grid>
           ))}
         </Grid>
+      )}
+      </>
       )}
 
       {/* Report Detail Modal */}

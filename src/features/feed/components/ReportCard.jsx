@@ -27,6 +27,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import LockIcon from '@mui/icons-material/Lock';
 
 import { useThemeMode } from '../../../app/providers/ThemeModeProvider';
 import { useAuth } from '../../../hooks/useAuth';
@@ -35,6 +36,7 @@ import { setReportHidden } from '../../reportDetail/api';
 import { EditReportDialog } from '../../reportDetail/components/EditReportDialog';
 import { DeleteReportConfirmDialog } from '../../reportDetail/components/DeleteReportConfirmDialog';
 import { formatDistance } from '../../../lib/geoUtils';
+import { getPrivacyDisplay } from '../../../lib/privacyUtils';
 
 const categoryLabels = {
   pothole: 'Pothole',
@@ -138,42 +140,84 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
             borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Avatar
-              sx={{
-                width: 30,
-                height: 30,
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                bgcolor: 'secondary.main',
-                color: '#FFFFFF',
-                borderRadius: '4px',
-              }}
-            >
-              {(report.users?.name || 'C').charAt(0).toUpperCase()}
-            </Avatar>
-            <Box>
-              <Typography
-                variant="subtitle2"
-                component={RouterLink}
-                to={`/profile/${report.reporter_id || ''}`}
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.8125rem',
-                  color: 'text.primary',
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' },
-                  display: 'block',
-                  lineHeight: 1.2,
-                }}
-              >
-                {report.users?.name || 'Citizen'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                {formatDate(report.created_at)}
-              </Typography>
-            </Box>
-          </Box>
+          {(() => {
+            const privacyInfo = getPrivacyDisplay({
+              reporterId: report.reporter_id,
+              realName: report.users?.name || report.reporter_name,
+              anonymousName: report.users?.anonymous_name || report.anonymous_name,
+              isPostLocked: Boolean(report.privacy_lock),
+              isAccountLocked: Boolean(report.users?.privacy_lock),
+              currentUserId: user?.id,
+            });
+
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Avatar
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    bgcolor: privacyInfo.avatarBg || 'secondary.main',
+                    color: '#FFFFFF',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {privacyInfo.isLocked && !privacyInfo.isAuthor ? (
+                    <LockIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    privacyInfo.avatarChar
+                  )}
+                </Avatar>
+                <Box>
+                  {privacyInfo.showProfileLink ? (
+                    <Typography
+                      variant="subtitle2"
+                      component={RouterLink}
+                      to={`/profile/${report.reporter_id || ''}`}
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.8125rem',
+                        color: 'text.primary',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                        display: 'block',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {privacyInfo.displayName}
+                    </Typography>
+                  ) : (
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.8125rem',
+                        color: 'text.primary',
+                        display: 'block',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      🦒 {privacyInfo.displayName}
+                    </Typography>
+                  )}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                      {formatDate(report.created_at)}
+                    </Typography>
+                    {privacyInfo.isLocked && (
+                      <Chip
+                        label={privacyInfo.isAuthor ? '🔒 You (Anonymous)' : '🔒 Anonymous'}
+                        size="small"
+                        color={privacyInfo.isAuthor ? 'warning' : 'default'}
+                        sx={{ height: 16, fontSize: '0.625rem', fontWeight: 700, ml: 0.25 }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            );
+          })()}
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {report.is_hidden && (

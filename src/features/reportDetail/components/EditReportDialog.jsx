@@ -13,7 +13,12 @@ import {
   Alert,
   CircularProgress,
   Box,
+  Paper,
+  Typography,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
+import SecurityIcon from '@mui/icons-material/Security';
 import { updateReportDetails } from '../api';
 
 const CATEGORIES = [
@@ -28,6 +33,7 @@ export const EditReportDialog = ({ open, onClose, report, onSaveSuccess }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('other');
+  const [privacyLock, setPrivacyLock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,6 +42,7 @@ export const EditReportDialog = ({ open, onClose, report, onSaveSuccess }) => {
       setTitle(report.title || '');
       setDescription(report.description || '');
       setCategory(report.category || 'other');
+      setPrivacyLock(Boolean(report.privacy_lock));
       setError(null);
     }
   }, [report, open]);
@@ -55,6 +62,7 @@ export const EditReportDialog = ({ open, onClose, report, onSaveSuccess }) => {
         title: title.trim(),
         description: description.trim(),
         category,
+        privacy_lock: privacyLock,
       });
       if (onSaveSuccess) {
         onSaveSuccess(updated);
@@ -116,6 +124,44 @@ export const EditReportDialog = ({ open, onClose, report, onSaveSuccess }) => {
               fullWidth
               disabled={submitting}
             />
+
+            {/* Privacy Lock Toggle in Edit Modal */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: 'action.hover',
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SecurityIcon color="primary" sx={{ fontSize: 20 }} />
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="700">
+                    Privacy Lock (Anonymous)
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Keep this report anonymous to citizens, officials, and admins.
+                  </Typography>
+                </Box>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={privacyLock}
+                    onChange={(e) => setPrivacyLock(e.target.checked)}
+                    disabled={submitting}
+                    color="primary"
+                  />
+                }
+                label=""
+                sx={{ m: 0 }}
+              />
+            </Paper>
           </Box>
         </DialogContent>
         <DialogActions>
