@@ -245,8 +245,27 @@ export const OfficialReportsPage = () => {
         />
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ borderRadius: '6px', overflow: 'hidden' }}>
-            <Table size="small" sx={{ minWidth: 750 }} aria-label="official reports table">
+          <TableContainer
+            component={Paper}
+            sx={{
+              borderRadius: '6px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              boxShadow: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? '0 4px 20px rgba(0,0,0,0.4)'
+                  : '0 2px 12px rgba(0,0,0,0.06)',
+              '&::-webkit-scrollbar': {
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                borderRadius: '4px',
+              },
+            }}
+          >
+            <Table size="small" sx={{ minWidth: 900 }} aria-label="official reports table">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>

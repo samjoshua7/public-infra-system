@@ -9,16 +9,18 @@ export const ReportDetailDialog = ({ reportId, onClose, onStatusUpdated }) => {
       onClose={onClose}
       fullWidth
       maxWidth="lg"
-      scroll="body"
+      scroll="paper"
       PaperProps={{
         sx: {
           borderRadius: { xs: 1.5, sm: 2 },
           overflow: 'hidden',
           height: { xs: '92vh', md: '84vh' },
-          maxHeight: '92vh',
+          maxHeight: { xs: '92vh', md: '84vh' },
           bgcolor: 'background.paper',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.3)',
           m: { xs: 1, sm: 2 },
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
@@ -26,7 +28,9 @@ export const ReportDetailDialog = ({ reportId, onClose, onStatusUpdated }) => {
         sx={{
           p: 0,
           height: '100%',
-          overflow: 'hidden',
+          overflowY: { xs: 'auto', md: 'hidden' },
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
           display: 'flex',
           flexDirection: 'column',
         }}

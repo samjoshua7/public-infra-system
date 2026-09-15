@@ -65,6 +65,14 @@ Implement category/department-based access control for government officials:
   - Passed `category={report.category}` to `StatusUpdateControl`.
 - [src/features/officialDashboard/OfficialDashboardPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialDashboardPage.jsx) *(MODIFY)*:
   - Added toggle button group for Citywide vs My Department metrics.
+- [src/features/officialDashboard/components/ReportDetailDialog.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/components/ReportDetailDialog.jsx) *(MODIFY)*:
+  - Fixed mobile dialog scrolling: switched `scroll="paper"`, added `overflowY: { xs: 'auto', md: 'hidden' }` with touch scrolling so mobile users can scroll down through photos, details, audit trails, and comments.
+- [src/features/reportDetail/components/ReportDetailContent.jsx](file:///d:/Git/public-infra-system/src/features/reportDetail/components/ReportDetailContent.jsx) *(MODIFY)*:
+  - Fixed mobile scrolling: set `overflow: { xs: 'visible', md: 'hidden' }` on paper container, slightly optimized image height on phones, and enabled natural vertical flow for details and comments.
+- [src/features/admin/AdminUsersPage.jsx](file:///d:/Git/public-infra-system/src/features/admin/AdminUsersPage.jsx) *(MODIFY)*:
+  - Fixed table scrolling on `/admin`: replaced `overflow: 'hidden'` with `overflowX: 'auto'` on `TableContainer`, set table `minWidth: 1080px`, added `whiteSpace: 'nowrap'` on headers and cells to ensure all 7 columns scroll cleanly.
+- [src/features/officialDashboard/OfficialReportsPage.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/OfficialReportsPage.jsx) *(MODIFY)*:
+  - Replaced `overflow: 'hidden'` with `overflowX: 'auto'` and `minWidth: 900px` for smooth horizontal table scrolling.
 
 ---
 

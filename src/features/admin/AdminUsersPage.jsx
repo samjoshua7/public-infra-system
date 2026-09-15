@@ -343,11 +343,30 @@ export const AdminUsersPage = () => {
             />
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ borderRadius: '6px', overflow: 'hidden' }}>
-                <Table sx={{ minWidth: 750 }} aria-label="user management table">
+              <TableContainer
+                component={Paper}
+                sx={{
+                  borderRadius: '6px',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 4px 20px rgba(0,0,0,0.4)'
+                      : '0 2px 12px rgba(0,0,0,0.06)',
+                  '&::-webkit-scrollbar': {
+                    height: '8px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                    borderRadius: '4px',
+                  },
+                }}
+              >
+                <Table sx={{ minWidth: 1080 }} aria-label="user management table">
                   <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         <TableSortLabel
                           active={sortBy === 'name'}
                           direction={sortBy === 'name' ? sortOrder : 'asc'}
@@ -357,7 +376,7 @@ export const AdminUsersPage = () => {
                         </TableSortLabel>
                       </TableCell>
 
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         <TableSortLabel
                           active={sortBy === 'email'}
                           direction={sortBy === 'email' ? sortOrder : 'asc'}
@@ -367,7 +386,7 @@ export const AdminUsersPage = () => {
                         </TableSortLabel>
                       </TableCell>
 
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         <TableSortLabel
                           active={sortBy === 'role'}
                           direction={sortBy === 'role' ? sortOrder : 'asc'}
@@ -377,11 +396,11 @@ export const AdminUsersPage = () => {
                         </TableSortLabel>
                       </TableCell>
 
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 180 }}>
                         Department
                       </TableCell>
 
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         <TableSortLabel
                           active={sortBy === 'approval_status'}
                           direction={sortBy === 'approval_status' ? sortOrder : 'asc'}
@@ -391,7 +410,7 @@ export const AdminUsersPage = () => {
                         </TableSortLabel>
                       </TableCell>
 
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         <TableSortLabel
                           active={sortBy === 'created_at'}
                           direction={sortBy === 'created_at' ? sortOrder : 'asc'}
@@ -401,7 +420,7 @@ export const AdminUsersPage = () => {
                         </TableSortLabel>
                       </TableCell>
 
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      <TableCell align="right" sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 240 }}>
                         Actions & Role
                       </TableCell>
                     </TableRow>
@@ -413,7 +432,7 @@ export const AdminUsersPage = () => {
 
                       return (
                         <TableRow key={u.id} hover>
-                          <TableCell>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                               <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
                                 {(u.name || u.email || 'U').charAt(0).toUpperCase()}
@@ -427,15 +446,15 @@ export const AdminUsersPage = () => {
                             </Box>
                           </TableCell>
 
-                          <TableCell>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Typography variant="body2" color="text.secondary">
                               {u.email}
                             </Typography>
                           </TableCell>
 
-                          <TableCell>{getRoleBadge(u.role)}</TableCell>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>{getRoleBadge(u.role)}</TableCell>
 
-                          <TableCell>
+                          <TableCell sx={{ minWidth: 180 }}>
                             {u.role === 'ADMIN' ? (
                               <Chip
                                 size="small"
@@ -444,7 +463,7 @@ export const AdminUsersPage = () => {
                                 sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}
                               />
                             ) : u.role === 'GOVERNMENT_OFFICIAL' ? (
-                              <FormControl size="small" sx={{ minWidth: 150, maxWidth: 220 }}>
+                              <FormControl size="small" sx={{ minWidth: 160, maxWidth: 240 }}>
                                 <Select
                                   multiple
                                   value={u.assigned_departments || []}
@@ -516,15 +535,15 @@ export const AdminUsersPage = () => {
                             )}
                           </TableCell>
 
-                          <TableCell>{getApprovalBadge(u.approval_status)}</TableCell>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>{getApprovalBadge(u.approval_status)}</TableCell>
 
-                          <TableCell>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Typography variant="body2" color="text.secondary">
                               {formatDate(u.created_at)}
                             </Typography>
                           </TableCell>
 
-                          <TableCell align="right">
+                          <TableCell align="right" sx={{ whiteSpace: 'nowrap', minWidth: 240 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
                               {/* Approve / Reject Actions */}
                               {!isAdminRole && (

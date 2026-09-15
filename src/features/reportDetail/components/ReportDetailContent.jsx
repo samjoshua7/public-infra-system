@@ -259,9 +259,10 @@ export const ReportDetailContent = ({
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         height: { xs: 'auto', md: '100%' },
+        minHeight: { md: '100%' },
         maxHeight: { md: '100%' },
         borderRadius: { xs: 0, sm: 2 },
-        overflow: 'hidden',
+        overflow: { xs: 'visible', md: 'hidden' },
         border: (theme) => `1px solid ${theme.palette.divider}`,
         bgcolor: 'background.paper',
       }}
@@ -279,7 +280,7 @@ export const ReportDetailContent = ({
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          height: { xs: 320, sm: 420, md: '100%' },
+          height: { xs: 280, sm: 380, md: '100%' },
         }}
       >
         <Box
@@ -568,7 +569,7 @@ export const ReportDetailContent = ({
         <Box
           sx={{
             flexGrow: 1,
-            overflowY: 'auto',
+            overflowY: { xs: 'visible', md: 'auto' },
             p: 2,
             display: 'flex',
             flexDirection: 'column',
