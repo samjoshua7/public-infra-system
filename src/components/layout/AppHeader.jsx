@@ -11,19 +11,24 @@ import {
   Chip,
   Avatar,
   Divider,
+  Badge,
+  Tooltip,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 import { signOut } from '../../features/auth/api';
 import { ThemeToggleButton } from './ThemeToggleButton';
 
 export const AppHeader = () => {
   const { user, profile, role, isAuthenticated } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -99,8 +104,27 @@ export const AppHeader = () => {
           {getPageTitle()}
         </Typography>
 
-        {/* Right Section: Role, Theme Toggle, Account */}
+        {/* Right Section: Role, Notifications, Theme Toggle, Account */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {isAuthenticated && (
+            <Tooltip title="Notifications">
+              <IconButton
+                component={RouterLink}
+                to="/notifications"
+                size="small"
+                aria-label="Activity and notifications"
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': { color: 'text.primary' },
+                }}
+              >
+                <Badge badgeContent={unreadCount} color="error" max={99}>
+                  <NotificationsNoneIcon sx={{ fontSize: 20 }} />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
+
           <ThemeToggleButton />
 
           {isAuthenticated ? (
