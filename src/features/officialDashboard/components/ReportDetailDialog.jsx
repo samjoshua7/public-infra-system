@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Typography,
-  Box,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Dialog, DialogContent } from '@mui/material';
 import { ReportDetailContent } from '../../reportDetail/components/ReportDetailContent';
 
 export const ReportDetailDialog = ({ reportId, onClose, onStatusUpdated }) => {
@@ -16,45 +8,34 @@ export const ReportDetailDialog = ({ reportId, onClose, onStatusUpdated }) => {
       open={Boolean(reportId)}
       onClose={onClose}
       fullWidth
-      maxWidth="md"
-      scroll="paper"
+      maxWidth="lg"
+      scroll="body"
       PaperProps={{
         sx: {
-          borderRadius: '6px',
-          maxHeight: '90vh',
+          borderRadius: { xs: 1.5, sm: 2 },
+          overflow: 'hidden',
+          height: { xs: '92vh', md: '84vh' },
+          maxHeight: '92vh',
+          bgcolor: 'background.paper',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.3)',
+          m: { xs: 1, sm: 2 },
         },
       }}
     >
-      <DialogTitle
+      <DialogContent
         sx={{
-          m: 0,
-          p: 2,
+          p: 0,
+          height: '100%',
+          overflow: 'hidden',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          flexDirection: 'column',
         }}
       >
-        <Typography variant="h6" fontWeight="700">
-          Report Audit Details
-        </Typography>
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
         {reportId && (
           <ReportDetailContent
             reportId={reportId}
             showBackToFeed={false}
+            onClose={onClose}
             onStatusUpdated={onStatusUpdated}
           />
         )}

@@ -1,59 +1,49 @@
-# HANDOVER.md — Native Desktop & Mobile PWA Push Notification Engine
+# HANDOVER.md — Instagram Web-Style Report Detail & Official Audit Redesign
 
 ## Objective
-Enable native operating system push notifications (Windows Action Center toasts, Android notification shade, Chrome PWA banners) for desktop and mobile devices alongside the existing in-app notification engine.
+Replace the long, single-column scrollable report view with an **Instagram Web Post View** across both citizen report details (`ReportDetailPage.jsx`) and official audit modal (`ReportDetailDialog.jsx`):
+1. **Left Side Frame**: Dark letterbox frame with full-height contain-fit photo, floating status chip, and category badge.
+2. **Right Side Frame**:
+   - **Sticky Top Header**: Reporter avatar, name, official/admin badge, owner options menu, and close button `X`.
+   - **Scrollable Middle Area**: Post title, full description, geolocation with map link, official status pipeline controls (for officials/admins), status audit history timeline, and community comments stream.
+   - **Docked Bottom Footer**: Instagram action icons (heart like button, comment button, map button), like count, date, and docked `"Add a comment..."` input with `"Post"` button.
+3. **Mobile Responsiveness**: Stacks cleanly into an Instagram mobile post format with zero horizontal overflow or double scrollbars.
 
 ---
 
 ## Decisions Made
-1. **Hybrid Native Notification Dispatcher (`src/lib/nativeNotifications.js`)**:
-   - Primary: Uses `navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options))` — required for Android Chrome and installed Chrome PWAs.
-   - Fallback: Uses desktop `new Notification(title, options)` with `onclick` focus handler.
-   - Rich OS Options: Includes app badge and icon (`/icons/icon-192.png`), vibration pattern `[200, 100, 200]`, custom tags to prevent duplicate spam, and `data.url` pointing to `/report/:id`.
-2. **Service Worker Navigation & Click Routing (`public/sw.js`)**:
-   - Added `notificationclick` listener: closes the notification, matches existing open windows/tabs and navigates to the target URL, or opens a new window if none are active.
-   - Added `push` listener for future external VAPID background payloads.
-3. **Local Dev & Production SW Registration (`index.html`)**:
-   - Enabled `navigator.serviceWorker.register('/sw.js')` on window load across both local dev and production. The service worker already bypasses all dev, HMR, and Vite requests so offline caching traps are prevented while notification capabilities are fully available.
-4. **Automatic Prompt On Every Reload (`PushPermissionBanner.jsx` & `NotificationProvider.jsx`)**:
-   - The app now automatically prompts the browser for notification permission on every reload as long as permission has not yet been decided (`default`).
-   - Removed all `localStorage` dismissal persistence. On every reload, the user is presented with the prompt to either Accept or Reject.
-   - Built dual activation: immediate trigger on mount + fallback user-interaction listener so modern browser gesture restrictions are seamlessly handled.
-   - Added explicit Accept and Reject controls with live status chips.
+1. **Unified Shared View**:
+   - `ReportDetailContent.jsx` acts as the single source of truth for both the standalone `/report/:id` view and the `ReportDetailDialog.jsx` modal (used in Official Dashboard, Notifications, Explore, and Profile). Updating it upgrades all 5 surfaces at once.
+2. **Instagram Web Split Proportions**:
+   - On desktop (`md` and up): 58% left media column and 42% right interactive sidebar.
+   - Height locked at `84vh` inside dialogs and `78vh` on standalone page, eliminating nested scrollbars and delegating scrolling exclusively to the middle comments/audit section.
+3. **Docked Comment & Like Action Bar**:
+   - The like button, like count, and comment input are pinned to the bottom of the right panel, mirroring Instagram Web. Comments appear immediately in the scrollable stream above with auto-scroll.
+4. **Bugfix for Liked State & Like Toggle**:
+   - Fixed `TypeError: likedIds.includes is not a function` by correctly checking `likedIds.has(reportId)` on the `Set` returned by `fetchUserLikedReportIds`.
+   - Fixed `toggleReportLike` parameter call from positional to object signature `{ reportId, userId, isLiked }`.
 
 ---
 
-## Files Modified & Created
-- [public/sw.js](file:///d:/Git/public-infra-system/public/sw.js) *(MODIFY)*: Added `notificationclick` and `push` event listeners.
-- [index.html](file:///d:/Git/public-infra-system/index.html) *(MODIFY)*: Enabled clean service worker registration on load.
-- [src/lib/nativeNotifications.js](file:///d:/Git/public-infra-system/src/lib/nativeNotifications.js) *(NEW)*: Native notification dispatcher and permission manager.
-- [src/app/providers/NotificationProvider.jsx](file:///d:/Git/public-infra-system/src/app/providers/NotificationProvider.jsx) *(MODIFY)*: Dispatches native push notifications on Realtime events and provides permission context.
-- [src/components/notifications/PushPermissionBanner.jsx](file:///d:/Git/public-infra-system/src/components/notifications/PushPermissionBanner.jsx) *(NEW)*: Civic permission request prompt.
-- [src/components/layout/AppShell.jsx](file:///d:/Git/public-infra-system/src/components/layout/AppShell.jsx) *(MODIFY)*: Embedded `PushPermissionBanner`.
-- [src/features/notifications/NotificationsPage.jsx](file:///d:/Git/public-infra-system/src/features/notifications/NotificationsPage.jsx) *(MODIFY)*: Integrated push permission status badge and action button.
+## Files Modified
+- [src/features/officialDashboard/components/ReportDetailDialog.jsx](file:///d:/Git/public-infra-system/src/features/officialDashboard/components/ReportDetailDialog.jsx) *(MODIFY)*: Upgraded to edge-to-edge modal with `maxWidth="lg"` and zero padding.
+- [src/features/reportDetail/components/ReportDetailContent.jsx](file:///d:/Git/public-infra-system/src/features/reportDetail/components/ReportDetailContent.jsx) *(MODIFY)*: Redesigned into two-column Instagram web post view with docked actions and scrollable comments.
 
 ---
 
 ## Database Changes & Migrations
-- None (builds directly on `007_notifications_system.sql` and Supabase Realtime).
+- None.
 
 ---
 
 ## APIs Changed
-- Client-side only.
+- None (pure UI/UX transformation).
 
 ---
 
 ## Remaining TODOs (Priority Order)
-1. **Smoke Test Native Windows / Chrome OS Notification**:
-   - Open app on `http://localhost:5173`.
-   - Click "Enable Alerts" on the prompt banner -> click "Allow" on Chrome's native prompt.
-   - Minimize the browser or switch to another window.
-   - In another browser / tab, trigger any event (e.g. submit report or update status).
-   - Verify Windows Action Center toast appears in bottom-right corner with sound and Civic Voice icon.
-   - Click the toast -> verify it brings Chrome to focus and opens the report.
-
----
-
-## Known Risks
-- If a user explicitly blocks notifications in Chrome site settings (`chrome://settings/content/notifications`), the browser will not show the prompt again; the UI gracefully indicates `OS Alerts: Blocked`.
+1. **Smoke Test in Browser**:
+   - In `/feed`, `/explore`, or `/dashboard`, click any report to open the audit dialog.
+   - Verify the 2-column Instagram layout on desktop.
+   - Test like button, posting a comment, and advancing report status as an official.
+   - Resize to mobile width (<600px) and verify clean vertical stacking.
