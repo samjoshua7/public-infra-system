@@ -11,24 +11,34 @@ import { Link as RouterLink } from 'react-router-dom';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
-import { listReports, fetchUserLikedReportIds, toggleReportLike } from './api';
+import { listNearbyReports, fetchUserLikedReportIds, toggleReportLike } from './api';
 import { CategoryFilterBar } from './components/CategoryFilterBar';
+import { NearbyLocationBar } from './components/NearbyLocationBar';
 import { ReportCard } from './components/ReportCard';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
 import { useAuth } from '../../hooks/useAuth';
+import { useUserLocation } from '../../hooks/useUserLocation';
 import { STATUS_ORDER, STATUS_LABELS } from '../../lib/reportStatus';
 
 export const FeedPage = () => {
   const { user, isAuthenticated } = useAuth();
+  const {
+    coords,
+    hasCoords,
+    loading: loadingLocation,
+    permissionStatus,
+    requestLocation,
+  } = useUserLocation();
 
   const [reports, setReports] = useState([]);
   const [likedReportIds, setLikedReportIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Category & Status Filters
+  // Proximity, Category & Status Filters
+  const [radiusKm, setRadiusKm] = useState(null); // null means 'All Nearby'
   const [category, setCategory] = useState('all');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
@@ -39,7 +49,15 @@ export const FeedPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listReports({ category, status, page, pageSize: 8 });
+      const data = await listNearbyReports({
+        userLat: coords?.latitude ?? null,
+        userLng: coords?.longitude ?? null,
+        radiusKm,
+        category,
+        status,
+        page,
+        pageSize: 8,
+      });
       setReports(data.reports);
       setTotalPages(data.totalPages || 1);
       setTotalCount(data.totalCount || 0);
@@ -54,7 +72,7 @@ export const FeedPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [category, status, page, user?.id]);
+  }, [category, status, page, radiusKm, coords?.latitude, coords?.longitude, user?.id]);
 
   useEffect(() => {
     loadReports();
@@ -105,7 +123,9 @@ export const FeedPage = () => {
             Public Feed
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            Tracking {totalCount} verified infrastructure reports
+            {hasCoords
+              ? `Showing nearby issues within ${radiusKm ? `${radiusKm} km` : 'your vicinity'}`
+              : `Tracking ${totalCount} verified infrastructure reports`}
           </Typography>
         </Box>
 
@@ -123,7 +143,21 @@ export const FeedPage = () => {
         )}
       </Box>
 
-      {/* 2. Crisp Category Filter Bar */}
+      {/* 2. Hyper-Local Proximity & GPS Status Bar */}
+      <NearbyLocationBar
+        coords={coords}
+        hasCoords={hasCoords}
+        loadingLocation={loadingLocation}
+        permissionStatus={permissionStatus}
+        onRequestLocation={() => requestLocation().catch(() => {})}
+        selectedRadius={radiusKm}
+        onSelectRadius={(rad) => {
+          setRadiusKm(rad);
+          setPage(1);
+        }}
+      />
+
+      {/* 3. Crisp Category Filter Bar */}
       <CategoryFilterBar
         activeCategory={category}
         onSelectCategory={(cat) => {
@@ -132,7 +166,7 @@ export const FeedPage = () => {
         }}
       />
 
-      {/* 3. Clean Status Filter Pills */}
+      {/* 4. Clean Status Filter Pills */}
       <Box
         sx={{
           display: 'flex',
@@ -190,13 +224,14 @@ export const FeedPage = () => {
           );
         })}
 
-        {(category !== 'all' || status !== 'all') && (
+        {(category !== 'all' || status !== 'all' || radiusKm !== null) && (
           <Button
             size="small"
             startIcon={<RefreshIcon sx={{ fontSize: 14 }} />}
             onClick={() => {
               setCategory('all');
               setStatus('all');
+              setRadiusKm(null);
               setPage(1);
             }}
             sx={{ fontSize: '0.75rem', py: 0.25, minWidth: 'auto', flexShrink: 0, fontWeight: 600 }}
@@ -213,13 +248,17 @@ export const FeedPage = () => {
         </Box>
       )}
 
-      {/* 4. Stream of Clean Report Cards */}
+      {/* 5. Stream of Clean Report Cards */}
       {loading ? (
         <LoadingSkeleton count={3} />
       ) : reports.length === 0 ? (
         <EmptyState
-          title="No Reports Found"
-          description="No infrastructure reports match this filter criteria. Be the first to report."
+          title={radiusKm ? `No Reports Within ${radiusKm} km` : 'No Reports Found'}
+          description={
+            radiusKm
+              ? 'No infrastructure complaints were found within your chosen distance. Try selecting "All Nearby" or expanding your radius.'
+              : 'No infrastructure reports match this filter criteria. Be the first to report.'
+          }
           actionText={isAuthenticated ? 'Report an Issue' : 'Sign In to Report'}
           onAction={() => {}}
         />
