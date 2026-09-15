@@ -36,33 +36,11 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        const isLocalDev =
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          window.location.port === '5173';
-
-        if (isLocalDev) {
-          // In local dev, unregister any active service workers and clear cache to avoid 503 offline traps
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
-            for (const registration of registrations) {
-              registration.unregister();
-            }
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.log('SW registration note:', err);
           });
-          if ('caches' in window) {
-            caches.keys().then((keys) => {
-              for (const key of keys) {
-                caches.delete(key);
-              }
-            });
-          }
-        } else {
-          // In production, register the service worker for PWA capabilities
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch((err) => {
-              console.log('SW registration note:', err);
-            });
-          });
-        }
+        });
       }
     </script>
   </body>

@@ -21,6 +21,8 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -29,10 +31,18 @@ import {
   deleteNotification,
 } from './api';
 import { ReportDetailDialog } from '../officialDashboard/components/ReportDetailDialog';
+import { PushPermissionBanner } from '../../components/notifications/PushPermissionBanner';
 
 export const NotificationsPage = () => {
   const { user } = useAuth();
-  const { unreadCount, markAsRead, markAllAsRead, refreshUnreadCount } = useNotifications();
+  const {
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    refreshUnreadCount,
+    nativePermission,
+    requestNativePermission,
+  } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
@@ -186,23 +196,67 @@ export const NotificationsPage = () => {
           )}
         </Box>
 
-        {unreadCount > 0 && (
-          <Button
-            size="small"
-            startIcon={<DoneAllIcon sx={{ fontSize: 16 }} />}
-            onClick={handleMarkAllRead}
-            sx={{
-              fontSize: '0.75rem',
-              textTransform: 'none',
-              fontWeight: 600,
-              color: 'text.secondary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            Mark all read
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* OS Push Notification Status / Action */}
+          {nativePermission === 'granted' ? (
+            <Chip
+              icon={<CheckCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}
+              label="OS Alerts: Active"
+              size="small"
+              variant="outlined"
+              color="success"
+              sx={{ height: 24, fontSize: '0.725rem', fontWeight: 600 }}
+            />
+          ) : nativePermission === 'default' ? (
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              startIcon={<NotificationsActiveIcon sx={{ fontSize: 14 }} />}
+              onClick={requestNativePermission}
+              sx={{
+                height: 24,
+                fontSize: '0.725rem',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 1,
+              }}
+            >
+              Enable OS Alerts
+            </Button>
+          ) : nativePermission === 'denied' ? (
+            <Tooltip title="OS push notifications are blocked in your browser site settings.">
+              <Chip
+                label="OS Alerts: Blocked"
+                size="small"
+                variant="outlined"
+                color="warning"
+                sx={{ height: 24, fontSize: '0.725rem' }}
+              />
+            </Tooltip>
+          ) : null}
+
+          {unreadCount > 0 && (
+            <Button
+              size="small"
+              startIcon={<DoneAllIcon sx={{ fontSize: 16 }} />}
+              onClick={handleMarkAllRead}
+              sx={{
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                fontWeight: 600,
+                color: 'text.secondary',
+                '&:hover': { color: 'primary.main' },
+              }}
+            >
+              Mark all read
+            </Button>
+          )}
+        </Box>
       </Box>
+
+      {/* Permission Request Banner */}
+      <PushPermissionBanner />
 
       {/* Filter Tabs */}
       <Paper

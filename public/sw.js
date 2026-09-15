@@ -80,3 +80,58 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// =========================================================
+// PUSH NOTIFICATION CLICK & INTERACTION HANDLER
+// =========================================================
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || '/notifications';
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // If a window client is already open, focus it and navigate
+        for (const client of clientList) {
+          if ('focus' in client) {
+            client.focus();
+            if ('navigate' in client) {
+              return client.navigate(targetUrl);
+            }
+            return;
+          }
+        }
+        // If no window is open, open a new window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
+});
+
+// Optional push payload listener for Web Push protocol
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  try {
+    const payload = event.data.json();
+    const title = payload.title || 'Civic Voice Alert';
+    const options = {
+      body: payload.message || payload.body || 'New civic activity in your community.',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: {
+        url: payload.report_id ? `/report/${payload.report_id}` : '/notifications',
+      },
+      vibrate: [200, 100, 200],
+      tag: payload.report_id || 'civic-alert',
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (err) {
+    console.error('Failed to parse push event data:', err);
+  }
+});
+
