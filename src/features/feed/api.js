@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabaseClient';
 import { DEMO_REPORTS } from './demoReports';
 import { calculateDistanceKm } from '../../lib/geoUtils';
+import { dbCapabilities } from '../../lib/dbCapabilities';
 
 /**
  * Fetch issues nearby user's GPS coordinates using get_nearby_reports RPC.
@@ -76,11 +77,25 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  try {
-    let query = supabase
-      .from('issue_reports')
-      .select(
-        `
+  const selectCols = dbCapabilities.hasAddressColumn
+    ? `
+        report_id,
+        reporter_id,
+        photo_url,
+        title,
+        description,
+        category,
+        latitude,
+        longitude,
+        address,
+        status,
+        is_hidden,
+        like_count,
+        comment_count,
+        created_at,
+        users:reporter_id (name, email)
+      `
+    : `
         report_id,
         reporter_id,
         photo_url,
@@ -95,9 +110,12 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
         comment_count,
         created_at,
         users:reporter_id (name, email)
-      `,
-        { count: 'exact' }
-      )
+      `;
+
+  try {
+    let query = supabase
+      .from('issue_reports')
+      .select(selectCols, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -109,12 +127,16 @@ export const listReports = async ({ category, status, page = 1, pageSize = 12 })
       query = query.eq('status', status);
     }
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+    if (error && dbCapabilities.hasAddressColumn && (error.code === '42703' || error.message?.includes('address'))) {
+      dbCapabilities.setHasAddressColumn(false);
+      return listReports({ category, status, page, pageSize });
+    }
     if (error) throw error;
 
     if (data && data.length > 0) {
       return {
-        reports: data,
+        reports: data.map((item) => ({ ...item, address: item.address || null })),
         totalCount: count || data.length,
         totalPages: Math.ceil((count || data.length) / pageSize),
       };

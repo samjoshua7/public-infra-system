@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabaseClient';
+import { dbCapabilities } from '../../lib/dbCapabilities';
 
 export const uploadReportPhoto = async (file, userId) => {
   if (!file) throw new Error('No photo selected');
@@ -29,21 +30,44 @@ export const createIssueReport = async ({
   category,
   latitude,
   longitude,
+  address,
   reporterId,
 }) => {
+  const basePayload = {
+    photo_url: photoUrl,
+    title,
+    description,
+    category,
+    latitude,
+    longitude,
+    reporter_id: reporterId,
+  };
+
+  // If address is provided, try including it
+  if (address) {
+    const { data, error } = await supabase
+      .from('issue_reports')
+      .insert([{ ...basePayload, address }])
+      .select()
+      .single();
+
+    if (!error && data) {
+      dbCapabilities.setHasAddressColumn(true);
+      return data;
+    }
+
+    if (error && (error.code === '42703' || error.message?.includes('address'))) {
+      dbCapabilities.setHasAddressColumn(false);
+      // Fall through to insert without address
+    } else if (error) {
+      console.error('Failed to create issue report:', error);
+      throw new Error(`Failed to submit report: ${error.message}`);
+    }
+  }
+
   const { data, error } = await supabase
     .from('issue_reports')
-    .insert([
-      {
-        photo_url: photoUrl,
-        title,
-        description,
-        category,
-        latitude,
-        longitude,
-        reporter_id: reporterId,
-      },
-    ])
+    .insert([basePayload])
     .select()
     .single();
 
@@ -54,3 +78,4 @@ export const createIssueReport = async ({
 
   return data;
 };
+

@@ -12,10 +12,12 @@ import {
   Paper,
   Chip,
   Alert,
+  InputAdornment,
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 export const AutoFillReviewStep = ({
   title,
@@ -27,6 +29,10 @@ export const AutoFillReviewStep = ({
   photoPreview,
   aiSuccess,
   aiFillUpEnabled,
+  address,
+  setAddress,
+  latitude,
+  longitude,
   onSubmit,
   onBack,
   submitting,
@@ -116,6 +122,28 @@ export const AutoFillReviewStep = ({
             <MenuItem value="other">Other Infrastructure</MenuItem>
           </Select>
         </FormControl>
+
+        <TextField
+          margin="normal"
+          fullWidth
+          id="address"
+          label="Location Address"
+          value={address || ''}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="e.g. Main Bazaar Road, Palayamkottai"
+          helperText={
+            latitude && longitude
+              ? `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              : 'Auto-detected from GPS pin'
+          }
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocationOnIcon fontSize="small" color="primary" />
+              </InputAdornment>
+            ),
+          }}
+        />
 
         <TextField
           margin="normal"

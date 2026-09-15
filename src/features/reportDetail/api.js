@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabaseClient';
 import { DEMO_REPORTS } from '../feed/demoReports';
+import { dbCapabilities } from '../../lib/dbCapabilities';
 
 // In-memory cache for comments added to demo reports during the session
 const demoCommentsCache = {};
@@ -107,11 +108,26 @@ export const getReportDetail = async (reportId) => {
     if (demo) return demo;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('issue_reports')
-      .select(
-        `
+  const selectCols = dbCapabilities.hasAddressColumn
+    ? `
+        report_id,
+        reporter_id,
+        photo_url,
+        title,
+        description,
+        category,
+        latitude,
+        longitude,
+        address,
+        status,
+        is_hidden,
+        like_count,
+        comment_count,
+        created_at,
+        updated_at,
+        users:reporter_id (name, email)
+      `
+    : `
         report_id,
         reporter_id,
         photo_url,
@@ -127,13 +143,23 @@ export const getReportDetail = async (reportId) => {
         created_at,
         updated_at,
         users:reporter_id (name, email)
-      `
-      )
+      `;
+
+  try {
+    const { data, error } = await supabase
+      .from('issue_reports')
+      .select(selectCols)
       .eq('report_id', reportId)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      if (dbCapabilities.hasAddressColumn && (error.code === '42703' || error.message?.includes('address'))) {
+        dbCapabilities.setHasAddressColumn(false);
+        return getReportDetail(reportId);
+      }
+      throw error;
+    }
+    return { ...data, address: data.address || null };
   } catch (err) {
     const fallback = DEMO_REPORTS.find((r) => r.report_id === reportId);
     if (fallback) return fallback;

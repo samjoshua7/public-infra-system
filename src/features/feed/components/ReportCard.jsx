@@ -327,8 +327,8 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
               flexWrap: 'wrap',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-              <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary', maxWidth: '70%' }}>
+              <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary', flexShrink: 0 }} />
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -336,14 +336,18 @@ export const ReportCard = ({ report, isLiked, onToggleLike, isAuth, onReportUpda
                 href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                title={report.address ? `${report.address} (GPS: ${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)})` : `GPS: ${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`}
                 sx={{
                   fontWeight: 500,
                   fontSize: '0.75rem',
                   textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                   '&:hover': { color: 'primary.main', textDecoration: 'underline' },
                 }}
               >
-                GPS: {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
+                {report.address || `GPS: ${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`}
               </Typography>
             </Box>
 

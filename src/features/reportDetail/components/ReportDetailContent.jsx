@@ -572,24 +572,30 @@ export const ReportDetailContent = ({
               {report.description}
             </Typography>
 
-            {/* Geolocation Tag */}
+            {/* Geolocation Tag & Address */}
             <Box
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 0.5,
+                flexWrap: 'wrap',
+                gap: 0.75,
                 mt: 1.5,
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
+                px: 1.25,
+                py: 0.6,
+                borderRadius: 1.5,
                 bgcolor: 'action.hover',
                 border: (theme) => `1px solid ${theme.palette.divider}`,
               }}
             >
-              <LocationOnIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" fontWeight="600" color="text.secondary">
-                {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
+              <LocationOnIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+              <Typography variant="caption" fontWeight="600" color="text.primary">
+                {report.address || `${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`}
               </Typography>
+              {report.address && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+                  ({report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)})
+                </Typography>
+              )}
               <Button
                 component="a"
                 href={mapUrl}

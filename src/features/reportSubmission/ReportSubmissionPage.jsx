@@ -9,6 +9,7 @@ import { getAppSettings } from '../settings/api';
 import { validateGeofence } from '../../lib/geofence';
 import { analyzeReportPhoto } from '../../lib/aiClient';
 import { compressImage } from '../../lib/imageCompression';
+import { reverseGeocode } from '../../lib/geoUtils';
 import { PhotoCaptureStep } from './components/PhotoCaptureStep';
 import { AutoFillReviewStep } from './components/AutoFillReviewStep';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
@@ -21,6 +22,14 @@ export const ReportSubmissionPage = () => {
   const { coords, error: geoError, loading: geoLoading, getCoordinates } = useGeolocation();
 
   const [activeStep, setActiveStep] = useState(0);
+
+  // Custom Coords (from dragging pin on map)
+  const [customCoords, setCustomCoords] = useState(null);
+  const effectiveCoords = customCoords || coords;
+
+  // Real Street Address State
+  const [address, setAddress] = useState('');
+  const [addressLoading, setAddressLoading] = useState(false);
 
   // Form State
   const [photoFile, setPhotoFile] = useState(null);
@@ -47,6 +56,31 @@ export const ReportSubmissionPage = () => {
     });
   }, [getCoordinates]);
 
+  // Auto reverse-geocode address when coordinates change
+  useEffect(() => {
+    if (!effectiveCoords?.latitude || !effectiveCoords?.longitude) return;
+
+    let active = true;
+    setAddressLoading(true);
+
+    reverseGeocode(effectiveCoords.latitude, effectiveCoords.longitude)
+      .then((addr) => {
+        if (active && addr) {
+          setAddress(addr);
+        }
+      })
+      .catch((err) => {
+        console.warn('Geocoding warning:', err);
+      })
+      .finally(() => {
+        if (active) setAddressLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [effectiveCoords?.latitude, effectiveCoords?.longitude]);
+
   const handlePhotoSelected = async (file) => {
     setFormError(null);
     setCompressing(true);
@@ -64,7 +98,7 @@ export const ReportSubmissionPage = () => {
 
   const handleProceed = async () => {
     if (!photoFile) return;
-    if (!coords) {
+    if (!effectiveCoords) {
       setFormError('Location coordinates are required to submit a report.');
       return;
     }
@@ -76,8 +110,8 @@ export const ReportSubmissionPage = () => {
       const settings = await getAppSettings();
       if (settings?.geofence_center_lat != null && settings?.geofence_center_lng != null && settings?.geofence_radius_km > 0) {
         const geoResult = validateGeofence(
-          coords.latitude,
-          coords.longitude,
+          effectiveCoords.latitude,
+          effectiveCoords.longitude,
           settings.geofence_center_lat,
           settings.geofence_center_lng,
           settings.geofence_radius_km
@@ -119,7 +153,7 @@ export const ReportSubmissionPage = () => {
     e.preventDefault();
     setFormError(null);
 
-    if (!coords) {
+    if (!effectiveCoords) {
       setFormError('Geolocation permission is required to post a public report.');
       return;
     }
@@ -133,8 +167,8 @@ export const ReportSubmissionPage = () => {
       const settings = await getAppSettings();
       if (settings?.geofence_center_lat != null && settings?.geofence_center_lng != null && settings?.geofence_radius_km > 0) {
         const geoResult = validateGeofence(
-          coords.latitude,
-          coords.longitude,
+          effectiveCoords.latitude,
+          effectiveCoords.longitude,
           settings.geofence_center_lat,
           settings.geofence_center_lng,
           settings.geofence_radius_km
@@ -161,8 +195,9 @@ export const ReportSubmissionPage = () => {
         title,
         description,
         category,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: effectiveCoords.latitude,
+        longitude: effectiveCoords.longitude,
+        address: address || null,
         reporterId: user.id,
       });
 
@@ -194,12 +229,18 @@ export const ReportSubmissionPage = () => {
             onPhotoSelected={handlePhotoSelected}
             onProceed={handleProceed}
             analyzing={analyzing || compressing}
-            geoCoords={coords}
+            geoCoords={effectiveCoords}
             geoError={geoError}
             geoLoading={geoLoading}
-            onRetryGeo={getCoordinates}
+            onRetryGeo={() => {
+              setCustomCoords(null);
+              getCoordinates();
+            }}
             aiFillUpEnabled={aiFillUpEnabled}
             onToggleAiFillUp={setAiFillUpEnabled}
+            address={address}
+            addressLoading={addressLoading}
+            onLocationChange={(newCoords) => setCustomCoords(newCoords)}
           />
         ) : (
           <AutoFillReviewStep
@@ -212,6 +253,10 @@ export const ReportSubmissionPage = () => {
             photoPreview={photoPreview}
             aiSuccess={aiSuccess}
             aiFillUpEnabled={aiFillUpEnabled}
+            address={address}
+            setAddress={setAddress}
+            latitude={effectiveCoords?.latitude}
+            longitude={effectiveCoords?.longitude}
             onSubmit={handleSubmitReport}
             onBack={() => setActiveStep(0)}
             submitting={submitting}

@@ -91,3 +91,63 @@ export const setStoredLocation = (coords) => {
     console.warn('Could not store location:', err);
   }
 };
+
+const geocodeCache = new Map();
+
+/**
+ * Reverse geocodes latitude and longitude into a clean civic street address
+ * using OpenStreetMap Nominatim.
+ */
+export const reverseGeocode = async (latitude, longitude) => {
+  if (latitude == null || longitude == null) return '';
+
+  const latNum = parseFloat(latitude);
+  const lngNum = parseFloat(longitude);
+  if (isNaN(latNum) || isNaN(lngNum)) return '';
+
+  const key = `${latNum.toFixed(4)},${lngNum.toFixed(4)}`;
+  if (geocodeCache.has(key)) {
+    return geocodeCache.get(key);
+  }
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latNum}&lon=${lngNum}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'Accept-Language': 'en',
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error(`Geocoding HTTP error ${res.status}`);
+
+    const data = await res.json();
+    if (data && data.address) {
+      const addr = data.address;
+      const road = addr.road || addr.pedestrian || addr.street || addr.footway || addr.path || '';
+      const area = addr.neighbourhood || addr.suburb || addr.residential || addr.quarter || '';
+      const city = addr.city || addr.town || addr.municipality || addr.village || addr.county || '';
+
+      const parts = [road, area, city].filter(Boolean);
+      let formatted = '';
+
+      if (parts.length > 0) {
+        formatted = parts.join(', ');
+      } else if (data.display_name) {
+        formatted = data.display_name.split(',').slice(0, 3).map((s) => s.trim()).join(', ');
+      }
+
+      if (formatted) {
+        geocodeCache.set(key, formatted);
+        return formatted;
+      }
+    }
+  } catch (err) {
+    console.warn('Reverse geocode warning:', err.message);
+  }
+
+  const fallback = `GPS: ${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`;
+  geocodeCache.set(key, fallback);
+  return fallback;
+};
