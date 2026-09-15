@@ -5,6 +5,7 @@ import { AppHeader } from './AppHeader';
 import { MobileTopBar } from './MobileTopBar';
 import { MobileBottomNav } from './MobileBottomNav';
 import { PWAInstallPrompt } from '../pwa/PWAInstallPrompt';
+import { PushPermissionBanner } from '../notifications/PushPermissionBanner';
 
 export const AppShell = ({ children }) => {
   return (
@@ -38,6 +39,7 @@ export const AppShell = ({ children }) => {
         }}
       >
         <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 3 } }}>
+          <PushPermissionBanner />
           {children}
         </Container>
       </Box>

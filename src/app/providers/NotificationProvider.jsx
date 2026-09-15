@@ -21,12 +21,19 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from '../../features/notifications/api';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  showNativePushNotification,
+} from '../../lib/nativeNotifications';
 
 export const NotificationContext = createContext({
   unreadCount: 0,
   refreshUnreadCount: async () => {},
   markAsRead: async () => {},
   markAllAsRead: async () => {},
+  nativePermission: 'default',
+  requestNativePermission: async () => {},
 });
 
 export const useNotificationContext = () => useContext(NotificationContext);
@@ -40,10 +47,17 @@ export const NotificationProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [nativePermission, setNativePermission] = useState(getNotificationPermission());
   const [toast, setToast] = useState({
     open: false,
     notification: null,
   });
+
+  const requestNativePermission = useCallback(async () => {
+    const perm = await requestNotificationPermission();
+    setNativePermission(perm);
+    return perm;
+  }, []);
 
   // Fetch unread count for current user
   const refreshUnreadCount = useCallback(async () => {
@@ -87,6 +101,28 @@ export const NotificationProvider = ({ children }) => {
     }
 
     refreshUnreadCount();
+    setNativePermission(getNotificationPermission());
+
+    // Auto-prompt browser notification permission on each reload if default
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        requestNativePermission();
+
+        // Fallback user interaction listener if browser suppresses non-gesture prompt
+        const triggerPromptOnGesture = () => {
+          if (Notification.permission === 'default') {
+            requestNativePermission();
+          }
+          window.removeEventListener('click', triggerPromptOnGesture);
+          window.removeEventListener('keydown', triggerPromptOnGesture);
+          window.removeEventListener('touchstart', triggerPromptOnGesture);
+        };
+
+        window.addEventListener('click', triggerPromptOnGesture, { once: true });
+        window.addEventListener('keydown', triggerPromptOnGesture, { once: true });
+        window.addEventListener('touchstart', triggerPromptOnGesture, { once: true });
+      }
+    }
 
     // Subscribe to realtime changes on notifications for this user
     const channel = supabase
@@ -103,10 +139,19 @@ export const NotificationProvider = ({ children }) => {
           const newNotif = payload.new;
           setUnreadCount((prev) => prev + 1);
 
-          // Trigger in-app toast notification
+          // 1. In-app toast notification
           setToast({
             open: true,
             notification: newNotif,
+          });
+
+          // 2. Native OS / Desktop / Mobile Push notification
+          showNativePushNotification({
+            title: newNotif.title,
+            message: newNotif.message,
+            subtext: newNotif.subtext,
+            reportId: newNotif.report_id,
+            type: newNotif.type,
           });
         }
       )
@@ -182,6 +227,8 @@ export const NotificationProvider = ({ children }) => {
         refreshUnreadCount,
         markAsRead,
         markAllAsRead,
+        nativePermission,
+        requestNativePermission,
       }}
     >
       {children}
