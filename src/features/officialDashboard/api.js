@@ -69,3 +69,39 @@ export const updateReportStatus = async (reportId, newStatus, note = '') => {
   if (error) throw error;
   return data;
 };
+
+/**
+ * Fetch overall statistics for the Official Dashboard.
+ * Aggregates reports by category and status.
+ */
+export const getDashboardStats = async () => {
+  const { data, error } = await supabase
+    .from('issue_reports')
+    .select('status, category, created_at');
+
+  if (error) throw error;
+
+  const totalReports = data.length;
+  const statusCounts = {};
+  const categoryCounts = {};
+  const timelineCounts = {};
+
+  data.forEach((r) => {
+    statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+    categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1;
+    
+    if (r.created_at) {
+      const dateStr = new Date(r.created_at).toISOString().split('T')[0];
+      timelineCounts[dateStr] = (timelineCounts[dateStr] || 0) + 1;
+    }
+  });
+
+  return {
+    totalReports,
+    openReports: totalReports - (statusCounts['finished'] || 0),
+    resolvedReports: statusCounts['finished'] || 0,
+    statusCounts,
+    categoryCounts,
+    timelineCounts
+  };
+};

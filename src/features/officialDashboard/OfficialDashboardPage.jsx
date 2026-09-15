@@ -25,7 +25,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { listReportsForOfficial } from './api';
+import { listReportsForOfficial, getDashboardStats } from './api';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorAlert } from '../../components/feedback/ErrorAlert';
@@ -38,6 +38,7 @@ import {
 } from '../../lib/reportStatus';
 import { ReportDetailDialog } from './components/ReportDetailDialog';
 import { QuickAdvanceDialog } from './components/QuickAdvanceDialog';
+import { DashboardAnalytics } from './components/DashboardAnalytics';
 
 const categoryLabels = {
   pothole: 'Pothole',
@@ -54,6 +55,7 @@ export const OfficialDashboardPage = () => {
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState(null);
 
   // Sorting State
   const [sortBy, setSortBy] = useState('created_at');
@@ -70,16 +72,20 @@ export const OfficialDashboardPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listReportsForOfficial({
-        status: statusTab,
-        page,
-        pageSize,
-        sortBy,
-        sortOrder,
-      });
+      const [data, dashboardStats] = await Promise.all([
+        listReportsForOfficial({
+          status: statusTab,
+          page,
+          pageSize,
+          sortBy,
+          sortOrder,
+        }),
+        getDashboardStats()
+      ]);
       setReports(data.reports);
       setTotalPages(data.totalPages || 1);
       setTotalCount(data.totalCount || 0);
+      setStats(dashboardStats);
     } catch (err) {
       console.error('Failed to load official dashboard reports:', err);
       setError(err.message || 'Failed to load official reports. Please try again.');
@@ -132,6 +138,8 @@ export const OfficialDashboardPage = () => {
           Monitor incoming civic infrastructure reports, track community likes, and advance report status through resolution.
         </Typography>
       </Box>
+
+      <DashboardAnalytics stats={stats} />
 
       {/* Status Tabs Paper */}
       <Paper sx={{ mb: 3, borderRadius: '6px' }}>
