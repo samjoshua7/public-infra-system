@@ -38,7 +38,7 @@ router.post('/', rateLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Missing or invalid imageBase64 parameter' });
     }
 
-    // Limit maximum base64 payload size (~10MB string limit)
+    // Limit maximum base64 payload size (~15MB string limit)
     if (imageBase64.length > 15 * 1024 * 1024) {
       return res.status(413).json({ error: 'Image size exceeds maximum allowed limit (10MB).' });
     }
@@ -47,8 +47,13 @@ router.post('/', rateLimiter, async (req, res) => {
     return res.json(result);
   } catch (error) {
     console.error('Error analyzing report photo:', error);
-    return res.status(500).json({
-      error: error.message || 'An unexpected error occurred while analyzing the photo',
+    // Graceful complete fallback to guarantee form auto-fill never breaks
+    return res.json({
+      title: 'Reported Public Infrastructure Issue',
+      description: 'Public infrastructure issue photographed by citizen. Please verify and refine details below.',
+      category: 'other',
+      isFallback: true,
+      error: error.message,
     });
   }
 });

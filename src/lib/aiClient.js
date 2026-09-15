@@ -15,26 +15,38 @@ const fileToBase64 = (file) =>
 
 /**
  * Call the Express AI endpoint to analyze a photo — sent directly as base64,
- * with no dependency on the photo already being uploaded anywhere.
- * @param {File} photoFile - The (ideally already-compressed) image file
- * @returns {Promise<{title: string, description: string, category: string}>}
+ * with multi-model fallbacks and client-side emergency resilience.
+ * @param {File} photoFile - The image file
+ * @returns {Promise<{title: string, description: string, category: string, modelUsed?: string, isFallback?: boolean}>}
  */
 export const analyzeReportPhoto = async (photoFile) => {
-  const imageBase64 = await fileToBase64(photoFile);
+  try {
+    const imageBase64 = await fileToBase64(photoFile);
 
-  const response = await fetch(`${EXPRESS_API_URL}/api/analyze-report`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ imageBase64, mimeType: photoFile.type || 'image/jpeg' }),
-  });
+    const response = await fetch(`${EXPRESS_API_URL}/api/analyze-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageBase64, mimeType: photoFile.type || 'image/jpeg' }),
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to analyze photo with AI service');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server returned HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.warn('[aiClient] AI request warning:', err.message);
+    // Return complete fallback fields so the citizen is never left with an empty form
+    return {
+      title: 'Reported Public Infrastructure Issue',
+      description: 'Public infrastructure issue photographed and submitted by citizen. Please verify and refine details below.',
+      category: 'other',
+      isFallback: true,
+      error: err.message,
+    };
   }
-
-  const data = await response.json();
-  return data;
 };

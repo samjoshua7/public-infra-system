@@ -21,10 +21,11 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = async (userId) => {
     if (!userId) {
       setProfile(null);
-      return;
+      return null;
     }
     const userProfile = await getUserProfile(userId);
     setProfile(userProfile);
+    return userProfile;
   };
 
   useEffect(() => {
@@ -58,8 +59,9 @@ export const AuthProvider = ({ children }) => {
 
   const refreshProfile = async () => {
     if (session?.user?.id) {
-      await fetchProfile(session.user.id);
+      return await fetchProfile(session.user.id);
     }
+    return null;
   };
 
   const role = profile?.role || 'CITIZEN';
