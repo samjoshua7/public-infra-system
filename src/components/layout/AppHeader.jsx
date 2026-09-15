@@ -20,6 +20,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import ViewListIcon from '@mui/icons-material/ViewList';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -53,6 +54,7 @@ export const AppHeader = () => {
     if (p.startsWith('/explore')) return 'Explore Infrastructure Issues';
     if (p.startsWith('/report/new')) return 'Report Infrastructure Issue';
     if (p.startsWith('/report/')) return 'Report Details';
+    if (p.startsWith('/dashboard/reports')) return 'Manage Reports';
     if (p.startsWith('/dashboard')) return 'Official Status Pipeline Dashboard';
     if (p.startsWith('/admin')) return 'Administration & User Management';
     if (p.startsWith('/notifications')) return 'Activity & Notifications';
@@ -196,15 +198,26 @@ export const AppHeader = () => {
                 </MenuItem>
 
                 {canAccessDashboard && (
-                  <MenuItem
-                    component={RouterLink}
-                    to="/dashboard"
-                    onClick={handleMenuClose}
-                    sx={{ gap: 1.25, fontSize: '0.8125rem' }}
-                  >
-                    <DashboardIcon fontSize="small" />
-                    Official Dashboard
-                  </MenuItem>
+                  <>
+                    <MenuItem
+                      component={RouterLink}
+                      to="/dashboard"
+                      onClick={handleMenuClose}
+                      sx={{ gap: 1.25, fontSize: '0.8125rem' }}
+                    >
+                      <DashboardIcon fontSize="small" />
+                      Official Dashboard
+                    </MenuItem>
+                    <MenuItem
+                      component={RouterLink}
+                      to="/dashboard/reports"
+                      onClick={handleMenuClose}
+                      sx={{ gap: 1.25, fontSize: '0.8125rem' }}
+                    >
+                      <ViewListIcon fontSize="small" />
+                      Manage Reports
+                    </MenuItem>
+                  </>
                 )}
 
                 {canAccessAdmin && (

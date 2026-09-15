@@ -22,6 +22,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ViewListIcon from '@mui/icons-material/ViewList';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -75,6 +76,12 @@ export const DesktopSidebar = () => {
       label: 'Official Dashboard',
       path: '/dashboard',
       icon: <DashboardIcon sx={{ fontSize: 20 }} />,
+      visible: canAccessDashboard,
+    },
+    {
+      label: 'Manage Reports',
+      path: '/dashboard/reports',
+      icon: <ViewListIcon sx={{ fontSize: 20 }} />,
       visible: canAccessDashboard,
     },
     {

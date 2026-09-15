@@ -16,6 +16,7 @@ import { WaitingApprovalPage } from '../features/auth/WaitingApprovalPage';
 import { ReportSubmissionPage } from '../features/reportSubmission/ReportSubmissionPage';
 import { ReportDetailPage } from '../features/reportDetail/ReportDetailPage';
 import { OfficialDashboardPage } from '../features/officialDashboard/OfficialDashboardPage';
+import { OfficialReportsPage } from '../features/officialDashboard/OfficialReportsPage';
 import { AdminUsersPage } from '../features/admin/AdminUsersPage';
 
 export const AppRoutes = () => {
@@ -70,6 +71,14 @@ export const AppRoutes = () => {
           element={
             <RoleGuard allowedRoles={['GOVERNMENT_OFFICIAL', 'ADMIN']}>
               <OfficialDashboardPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/dashboard/reports"
+          element={
+            <RoleGuard allowedRoles={['GOVERNMENT_OFFICIAL', 'ADMIN']}>
+              <OfficialReportsPage />
             </RoleGuard>
           }
         />
